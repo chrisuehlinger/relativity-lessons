@@ -1,3 +1,6 @@
+lodash = _;
+_.noConflict();
+
 mathbox = mathBox({
     plugins: ['core', 'controls', 'cursor'],
     controls: {
@@ -21,15 +24,19 @@ window.onkeydown = function (e) {
     }
 
     switch (e.keyCode) {
+        case 65:
         case 37:
             velocity[0] += (-1 - velocity[0])*0.1;
             break;
+        case 87:
         case 38:
             velocity[1] += (1-velocity[1])*0.1;
             break;
+        case 68:
         case 39:
             velocity[0] += (1-velocity[0])*0.1;
             break;
+        case 83:
         case 40:
             velocity[1] += (-1 - velocity[1])*0.1;
             break;
@@ -72,7 +79,7 @@ function init(){
         })
         .cartesian({
             range: [[-10, 10], [0, 10], [-10, 10]],
-            scale: [1, 1, 1],
+            scale: [1, 0.5, 1],
         });
 
     present = view.present({
@@ -98,7 +105,7 @@ function init(){
     .grid({
         axes: [1,3],
         divideX: 20,
-        divideY: 30,
+        divideY: 20,
         width: 1,
         opacity: 0.5,
     }).interval({
@@ -153,10 +160,12 @@ function init(){
         id: 'trajectory',
         width: 200,
         expr: function (emit, x, i, t) {
-            y = 10 - i/20;
-            var thisPosition = positions.slice(-(i+1))[0];
-            // console.log(thisPosition)
-            emit(thisPosition[0], y, -thisPosition[1]);
+            y = i/20;
+            if(i < positions.length) {
+                var thisPosition = positions[i];
+                // console.log(thisPosition)
+                emit(thisPosition[0], y, -thisPosition[1]);
+            }
         },
         channels: 3,
     }).line({
