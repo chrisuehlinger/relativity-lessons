@@ -76,17 +76,17 @@ function initSimulation(){
         updateFrame = setTimeout(update, 50);
     }, 50);
 
-    var lightInterval = setInterval(function(){
-        // position.push(position[0]);
-        // position.push(position[0]);
-        numLights += 2;
-    }, 1000);
+    // var lightInterval = setInterval(function(){
+    //     // position.push(position[0]);
+    //     // position.push(position[0]);
+    //     numLights += 2;
+    // }, 1000);
 
     setTimeout(function(){
         console.log('ADVANCE', numLights);
         present.set("index", 2);
         clearTimeout(updateFrame);
-        clearInterval(lightInterval);
+        // clearInterval(lightInterval);
         timerEnded = true;
     }, 10000);
 }
