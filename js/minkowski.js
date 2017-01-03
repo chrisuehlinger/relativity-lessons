@@ -11,6 +11,14 @@ three = mathbox.three;
 three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
+var objects = [],
+    player = {
+        position: 0,
+        velocity: 0,
+        color: 0x3090FF
+    },
+    lights = [];
+
 var position = lodash.fill(Array(21),0),
     positions = [lodash.fill(Array(21),0)],
     numLights = 0,
@@ -19,6 +27,10 @@ var position = lodash.fill(Array(21),0),
     timerEnded = false,
     timeElapsed = 0;
 
+var present;
+
+initDiagram(21);
+
 window.onkeydown = function (e) {
     if(timerEnded) {
         return;
@@ -26,59 +38,59 @@ window.onkeydown = function (e) {
 
     switch (e.keyCode) {
         case 65:
-        case 38:
+        case 37:
             velocity += (-1 - velocity)*0.05;
             break;
         case 68:
-        case 40:
+        case 39:
             velocity += (1-velocity)*0.05;
             break;
     }
-    console.log(velocity);
+    console.log('v = ' + Math.round(velocity*10000)/10000 + 'c');
 
     if(!timerStarted){
         timerStarted = true;
-
-        var lastFrameTime = Date.now();
-        var updateFrame = setTimeout(function update(){
-            var timeSinceLastFrame = Date.now() - lastFrameTime;
-            lastFrameTime = Date.now();
-            position[0] += velocity / (1000/timeSinceLastFrame);
-            for(var i = 1; i < position.length; i++){
-                var offset = position.length - i;
-                if(offset <= numLights) {
-                    position[i] += Math.pow(-1, offset) / (1000/timeSinceLastFrame);
-                } else {
-                    position[i] = position[0];
-                }
-            }
-            positions.push(position.slice());
-            // if(positions.length > 200) {
-            //     positions = positions.slice(1);
-            // }
-
-            updateFrame = setTimeout(update, 50);
-        }, 50);
-
-        var lightInterval = setInterval(function(){
-            // position.push(position[0]);
-            // position.push(position[0]);
-            numLights += 2;
-        }, 2000);
-
-        setTimeout(function(){
-            console.log('ADVANCE', numLights);
-            present.set("index", 2);
-            clearTimeout(updateFrame);
-            clearInterval(lightInterval);
-            timerEnded = true;
-        }, 10000);
+        initSimulation();
     }
 }
 
-var present;
+function initSimulation(){
+    var lastFrameTime = Date.now();
+    var updateFrame = setTimeout(function update(){
+        var timeSinceLastFrame = Date.now() - lastFrameTime;
+        lastFrameTime = Date.now();
+        position[0] += velocity / (1000/timeSinceLastFrame);
+        for(var i = 1; i < position.length; i++){
+            var offset = position.length - i;
+            if(offset <= numLights) {
+                position[i] += Math.pow(-1, offset) / (1000/timeSinceLastFrame);
+            } else {
+                position[i] = position[0];
+            }
+        }
+        positions.push(position.slice());
+        // if(positions.length > 200) {
+        //     positions = positions.slice(1);
+        // }
 
-initDiagram(21);
+        updateFrame = setTimeout(update, 50);
+    }, 50);
+
+    var lightInterval = setInterval(function(){
+        // position.push(position[0]);
+        // position.push(position[0]);
+        numLights += 2;
+    }, 1000);
+
+    setTimeout(function(){
+        console.log('ADVANCE', numLights);
+        present.set("index", 2);
+        clearTimeout(updateFrame);
+        clearInterval(lightInterval);
+        timerEnded = true;
+    }, 10000);
+}
+
 function initDiagram(numItems){    
     var view = mathbox
         .set({
