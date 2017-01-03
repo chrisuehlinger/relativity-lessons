@@ -1,3 +1,6 @@
+lodash = _;
+_.noConflict();
+
 mathbox = mathBox({
     plugins: ['core', 'controls', 'cursor'],
     controls: {
@@ -8,9 +11,10 @@ three = mathbox.three;
 three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
-var position = 0,
+var position = lodash.fill(Array(21),0),
+    positions = [lodash.fill(Array(21),0)],
+    numLights = 0,
     velocity = 0,
-    positions = [0],
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
@@ -23,11 +27,11 @@ window.onkeydown = function (e) {
     switch (e.keyCode) {
         case 37:
         case 38:
-            velocity += (-1 - velocity)*0.1;
+            velocity += (-1 - velocity)*0.05;
             break;
         case 39:
         case 40:
-            velocity += (1-velocity)*0.1;
+            velocity += (1-velocity)*0.05;
             break;
     }
     console.log(velocity);
@@ -39,8 +43,16 @@ window.onkeydown = function (e) {
         var updateFrame = setTimeout(function update(){
             var timeSinceLastFrame = Date.now() - lastFrameTime;
             lastFrameTime = Date.now();
-            position += velocity / (1000/timeSinceLastFrame);
-            positions.push(position);
+            position[0] += velocity / (1000/timeSinceLastFrame);
+            for(var i = 1; i < position.length; i++){
+                var offset = position.length - i;
+                if(offset <= numLights) {
+                    position[i] += Math.pow(-1, offset) / (1000/timeSinceLastFrame);
+                } else {
+                    position[i] = position[0];
+                }
+            }
+            positions.push(position.slice());
             // if(positions.length > 200) {
             //     positions = positions.slice(1);
             // }
@@ -48,10 +60,17 @@ window.onkeydown = function (e) {
             updateFrame = setTimeout(update, 50);
         }, 50);
 
+        var lightInterval = setInterval(function(){
+            // position.push(position[0]);
+            // position.push(position[0]);
+            numLights += 2;
+        }, 1000);
+
         setTimeout(function(){
             console.log('ADVANCE');
             present.set("index", 2);
             clearTimeout(updateFrame);
+            clearInterval(lightInterval);
             timerEnded = true;
         }, 10000);
     }
@@ -59,8 +78,8 @@ window.onkeydown = function (e) {
 
 var present;
 
-init();
-function init(){    
+init(21);
+function init(numItems){    
     var view = mathbox
         .set({
             focus: 3,
@@ -104,9 +123,9 @@ function init(){
         ]
     }).interval({
         id: 'currentPosition',
-        width:1,
+        width:numItems,
         expr: function (emit, x, i, t) {
-            emit(position, 0);
+            emit(position[i], 0);
         },
         channels: 2,
     }).point({
@@ -127,9 +146,12 @@ function init(){
     }).interval({
         id: 'trajectory',
         width: 200,
+        items: numItems,
         expr: function (emit, x, i, t) {
             y = i/20;
-            emit(positions[i], y);
+            if(i < positions.length)
+                for(var j = 0; j < numItems; j++)
+                    emit(positions[i][j], y);
         },
         channels: 2,
     }).line({
