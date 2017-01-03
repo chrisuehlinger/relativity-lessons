@@ -29,7 +29,7 @@ var position = lodash.fill(Array(21),0),
 
 var present;
 
-initDiagram(21);
+initDiagram(1);
 
 window.onkeydown = function (e) {
     if(timerEnded) {
@@ -84,7 +84,7 @@ function initSimulation(){
 
     setTimeout(function(){
         console.log('ADVANCE', numLights);
-        present.set("index", 2);
+        // present.set("index", 2);
         clearTimeout(updateFrame);
         // clearInterval(lightInterval);
         timerEnded = true;
@@ -101,17 +101,18 @@ function initDiagram(numItems){
             scale: [2, 1, 2],
         });
 
-    present = view.present({
-        index: 1
-    });
-    present.slide().reveal()
+    // present = view.present({
+    //     index: 1
+    // });
+    // present.slide().reveal()
+    view
     .transform()
-    .step({
-        script: [
-            {position:[0,5,0]},
-            {position:[0,0,0]},
-        ]
-    })
+    // .step({
+    //     script: [
+    //         {position:[0,5,0]},
+    //         {position:[0,0,0]},
+    //     ]
+    // })
     .axis({
         detail: 1,
     })
@@ -128,12 +129,14 @@ function initDiagram(numItems){
         width: 1,
         opacity: 0.5,
         zBias: -5,
-    }).step({
-        script:[
-            { rangeY: [0,0] },
-            { rangeY: [0,10]}
-        ]
-    }).array({
+    })
+    // .step({
+    //     script:[
+    //         { rangeY: [0,0] },
+    //         { rangeY: [0,10]}
+    //     ]
+    // })
+    .array({
         id: 'currentPosition',
         width: numItems,
         data: position,
@@ -142,31 +145,42 @@ function initDiagram(numItems){
         points: '#currentPosition',
         color: 0x3090FF,
         size: 10
-    }).step({
-        script:[
-            { opacity: 1},
-            { opacity: 0}
-        ]
     })
-    .end().end()
-    .slide().reveal({
-        duration: 1
-    })
+    // .step({
+    //     script:[
+    //         { opacity: 1},
+    //         { opacity: 0}
+    //     ]
+    // })
+    .end()//.end()
+    // .slide().reveal({
+    //     duration: 1
+    // })
     .axis({
         axis: 2
     }).array({
         id: 'trajectory',
-        width: 200,
+        width: 1,
         items: numItems,
+        history: 256,
         expr: function (emit, i, t) {
-            y = i/20;
-            if(i < positions.length)
-                for(var j = 0; j < numItems; j++)
-                    emit(positions[i][j], y);
+            emit(position[0]);
+            // y = i/20;
+            // if(i < positions.length)
+            //     for(var j = 0; j < numItems; j++)
+            //         emit(positions[i][j]);
         },
-        channels: 2,
-    }).line({
-        points: '#trajectory',
+        channels: 1,
+    })
+    .spread({
+        unit: 'relative',
+        alignHeight: -1,
+        height: [0, -10, 0],
+    })
+    .transpose({
+        order: 'yx'
+    })
+    .line({
         color: 0x3090FF,
         width: 5,
         end:false
