@@ -29,7 +29,7 @@ var position = lodash.fill(Array(21),0),
 
 var present;
 
-initDiagram(1);
+initDiagram(21);
 
 window.onkeydown = function (e) {
     if(timerEnded) {
@@ -76,17 +76,17 @@ function initSimulation(){
         updateFrame = setTimeout(update, 50);
     }, 50);
 
-    // var lightInterval = setInterval(function(){
-    //     // position.push(position[0]);
-    //     // position.push(position[0]);
-    //     numLights += 2;
-    // }, 1000);
+    var lightInterval = setInterval(function(){
+        // position.push(position[0]);
+        // position.push(position[0]);
+        numLights += 2;
+    }, 1000);
 
     setTimeout(function(){
         console.log('ADVANCE', numLights);
         // present.set("index", 2);
         clearTimeout(updateFrame);
-        // clearInterval(lightInterval);
+        clearInterval(lightInterval);
         timerEnded = true;
     }, 10000);
 }
@@ -164,11 +164,8 @@ function initDiagram(numItems){
         items: numItems,
         history: 256,
         expr: function (emit, i, t) {
-            emit(position[0]);
-            // y = i/20;
-            // if(i < positions.length)
-            //     for(var j = 0; j < numItems; j++)
-            //         emit(positions[i][j]);
+            for(var j=0; j < position.length; j++)
+                emit(position[j]);
         },
         channels: 1,
     })
