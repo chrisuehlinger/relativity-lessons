@@ -61,8 +61,8 @@ function initSimulation(){
         lastFrameTime = Date.now();
         position[0] += velocity / (1000/timeSinceLastFrame);
         for(var i = 1; i < position.length; i++){
-            var offset = position.length - i;
-            if(offset <= numLights) {
+            var offset = i-1;
+            if(offset < numLights) {
                 position[i] += Math.pow(-1, offset) / (1000/timeSinceLastFrame);
             } else {
                 position[i] = position[0];
@@ -151,7 +151,8 @@ function initDiagram(numItems){
     .end().end()
     .slide().reveal({
         duration: 1
-    }).axis({
+    })
+    .axis({
         axis: 2
     }).array({
         id: 'trajectory',
