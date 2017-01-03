@@ -4,7 +4,7 @@ _.noConflict();
 mathbox = mathBox({
     plugins: ['core', 'controls', 'cursor'],
     controls: {
-        klass: THREE.DeviceOrientationControls
+        klass: THREE.OrbitControls
     },
 });
 three = mathbox.three;
@@ -25,11 +25,11 @@ window.onkeydown = function (e) {
     }
 
     switch (e.keyCode) {
-        case 37:
+        case 65:
         case 38:
             velocity += (-1 - velocity)*0.05;
             break;
-        case 39:
+        case 68:
         case 40:
             velocity += (1-velocity)*0.05;
             break;
@@ -64,10 +64,10 @@ window.onkeydown = function (e) {
             // position.push(position[0]);
             // position.push(position[0]);
             numLights += 2;
-        }, 1000);
+        }, 2000);
 
         setTimeout(function(){
-            console.log('ADVANCE');
+            console.log('ADVANCE', numLights);
             present.set("index", 2);
             clearTimeout(updateFrame);
             clearInterval(lightInterval);
@@ -78,8 +78,8 @@ window.onkeydown = function (e) {
 
 var present;
 
-init(21);
-function init(numItems){    
+initDiagram(21);
+function initDiagram(numItems){    
     var view = mathbox
         .set({
             focus: 3,
@@ -121,13 +121,11 @@ function init(numItems){
             { rangeY: [0,0] },
             { rangeY: [0,10]}
         ]
-    }).interval({
+    }).array({
         id: 'currentPosition',
-        width:numItems,
-        expr: function (emit, x, i, t) {
-            emit(position[i], 0);
-        },
-        channels: 2,
+        width: numItems,
+        data: position,
+        channels: 1
     }).point({
         points: '#currentPosition',
         color: 0x3090FF,
@@ -143,11 +141,11 @@ function init(numItems){
         duration: 1
     }).axis({
         axis: 2
-    }).interval({
+    }).array({
         id: 'trajectory',
         width: 200,
         items: numItems,
-        expr: function (emit, x, i, t) {
+        expr: function (emit, i, t) {
             y = i/20;
             if(i < positions.length)
                 for(var j = 0; j < numItems; j++)
@@ -158,6 +156,7 @@ function init(numItems){
         points: '#trajectory',
         color: 0x3090FF,
         width: 5,
+        end:false
     });;
 
 }
