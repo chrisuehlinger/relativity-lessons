@@ -67,7 +67,7 @@ function init(){
         })
         .cartesian({
             range: [[-10, 10], [0, 10], [-10, 10]],
-            scale: [1, 1, 1],
+            scale: [2, 1, 2],
         });
 
     present = view.present({
@@ -82,16 +82,18 @@ function init(){
         ]
     })
     .axis({
-        detail: 30,
-    }).scale({
+        detail: 1,
+    })
+    .scale({
         divide: 1,
-    }).ticks({
+    })
+    .ticks({
         classes: ['foo', 'bar'],
         width: 2
     })
     .grid({
         divideX: 20,
-        divideY: 30,
+        divideY: 10,
         width: 1,
         opacity: 0.5,
         zBias: -5,
@@ -126,8 +128,8 @@ function init(){
         id: 'trajectory',
         width: 200,
         expr: function (emit, x, i, t) {
-            y = 10 - i/20;
-            emit(positions.slice(-(i+1))[0], y);
+            y = i/20;
+            emit(positions[i], y);
         },
         channels: 2,
     }).line({
