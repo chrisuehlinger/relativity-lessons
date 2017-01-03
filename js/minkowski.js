@@ -162,12 +162,16 @@ function initDiagram(numItems){
         id: 'trajectory',
         width: 1,
         items: numItems,
-        history: 256,
+        history: 580,
         expr: function (emit, i, t) {
             for(var j=0; j < position.length; j++)
                 emit(position[j]);
         },
         channels: 1,
+    },{
+        live: function(){
+            return !timerEnded;
+        }
     })
     .spread({
         unit: 'relative',
