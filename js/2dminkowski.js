@@ -30,7 +30,7 @@ var player = {
         size: 5,
         reference: useRelativity
     },
-    others = lodash.fill(Array(10), 0).map(function(){
+    others = lodash.fill(Array(0), 0).map(function(){
         var pos = [Math.random()*20 - 10, Math.random()*20 - 10];
         return {
             absolutePosition: pos,
@@ -39,6 +39,15 @@ var player = {
             color: [100, 0, 0],
             size: 4,
             reference: false
+        };
+    }),
+    events = lodash.fill(Array(100), 0).map(function(){
+        var pos = [0, Math.random()*40 - 20, Math.random()*60 - 10];
+        return {
+            absolutePosition: pos,
+            relativePosition: pos,
+            color: [0, 100, 0],
+            size: 4
         };
     }),
     objects = [player].concat(others),
@@ -75,45 +84,77 @@ window.onkeydown = function (e) {
     if(!timerStarted){
         timerStarted = true;
 
-        var lastFrameTime = Date.now();
-        var updateFrame = setTimeout(function update(){
-            var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
-            lastFrameTime = Date.now();
-
-            var referenceFrame = objects.filter(function(obj) { return obj.reference; })[0] || {
-                absolutePosition: [0,0],
-                velocity: [0, 0]
-            }
-            referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
-            referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
-
-            objects.map(function(object){
-                if(!object.reference) {
-                    var relativeVelocityX = referenceFrame.velocity[0] - object.velocity[0],
-                        relativeVelocityY = referenceFrame.velocity[1] - object.velocity[1],
-                        relativeVelocity = Math.sqrt(relativeVelocityX*relativeVelocityX + relativeVelocityY*relativeVelocityY);
-                    var lorentzBoost = useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
-                    object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
-                    object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
-                    object.relativePosition = [
-                        lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
-                        lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
-                    ];
-                }
-            });
-
-            updateFrame = setTimeout(update, 50);
-        }, 50);
-
-        setTimeout(function(){
-            console.log('ADVANCE');
-            clearTimeout(updateFrame);
-            timerEnded = true;
-    }, timeLimit * 1000);
+        initSimulation();
     }
 }
 
 initDiagram(objectCount);
+
+function initSimulation(){
+    var lastFrameTime = startTime = Date.now();
+    var updateFrame = setTimeout(update, 50);
+    function update(){
+        var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
+        timeElapsed = (Date.now() - startTime) / 1000;
+        lastFrameTime = Date.now();
+
+        var referenceFrame = objects.filter(function(obj) { return obj.reference; })[0] || {
+            absolutePosition: [0,0],
+            velocity: [0, 0]
+        }
+        referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
+        referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
+
+        // objects.map(function(object){
+        //     if(!object.reference) {
+        //         // var relativeVelocityX = referenceFrame.velocity[0] - object.velocity[0],
+        //         //     relativeVelocityY = referenceFrame.velocity[1] - object.velocity[1],
+        //         //     relativeVelocity = Math.sqrt(relativeVelocityX*relativeVelocityX + relativeVelocityY*relativeVelocityY);
+        //         // var lorentzBoost = useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
+        //         object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
+        //         object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
+        //         // object.relativePosition = [
+        //         //     lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
+        //         //     lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
+        //         // ];
+        //     }
+        // });
+
+        var beta = Math.sqrt(referenceFrame.velocity[0]*referenceFrame.velocity[0] + referenceFrame.velocity[1]*referenceFrame.velocity[1]);
+        var gamma = Math.sqrt(1 - beta*beta);
+        events.map(function(event){
+            event.relativePosition = [
+                event.absolutePosition[0] - referenceFrame.absolutePosition[0],
+                event.absolutePosition[1] - referenceFrame.absolutePosition[1],
+                event.absolutePosition[2] - timeElapsed
+            ];
+            if(useLorentzBoost) {
+                var theta = Math.atan2(referenceFrame.velocity[1], referenceFrame.velocity[0]),
+                    cosTheta = Math.cos(theta),
+                    sinTheta = Math.sin(theta);
+
+                var x = event.relativePosition[0],
+                    y = event.relativePosition[1],
+                    t = event.relativePosition[2]
+
+                event.relativePosition = [
+                    -beta*gamma*t*cosTheta + (gamma*cosTheta*cosTheta + sinTheta*sinTheta)*x +(gamma-1)*y*sinTheta*cosTheta,
+                    -beta*gamma*t*sinTheta + (gamma*sinTheta*sinTheta + cosTheta*cosTheta)*y +(gamma-1)*x*sinTheta*cosTheta,
+                    gamma*t - gamma*beta*x*cosTheta - gamma*beta*y*sinTheta
+                ];
+            }
+        });
+
+        updateFrame = setTimeout(update, 50);
+    }
+
+    setTimeout(function(){
+        console.log('ADVANCE');
+        clearTimeout(updateFrame);
+        timerEnded = true;
+    }, timeLimit * 1000);
+}
+
 function initDiagram(numItems){    
     var view = mathbox
         .set({
@@ -198,32 +239,63 @@ function initDiagram(numItems){
         opacity: 0.5,
     })
     .end()
+    // .array({
+    //     id: 'trajectory',
+    //     width: 1,
+    //     items: numItems,
+    //     history: 580,
+    //     expr: function (emit, i, t) {
+    //         for(var j=0; j < objects.length; j++){
+    //             emit(objects[j].relativePosition[0], -objects[j].relativePosition[1]);
+    //         }
+    //     },
+    //     channels: 2,
+    // },{
+    //     live: function(){
+    //         return !timerEnded;
+    //     }
+    // })
+    // .spread({
+    //     unit: 'relative',
+    //     alignHeight: 1,
+    //     height: [0, 0, -10],
+    // })
+    // .swizzle({
+    //     order:'xzy'
+    // })
+    // .point({
+    //     color:0xFF0000,
+    // })
     .array({
-        id: 'trajectory',
-        width: 1,
-        items: numItems,
-        history: 580,
-        expr: function (emit, i, t) {
-            for(var j=0; j < objects.length; j++){
-                emit(objects[j].relativePosition[0], -objects[j].relativePosition[1]);
+        id: 'events',
+        channels: 3,
+        width: 1e4,
+        expr:function(emit, i, t){
+            if(i < events.length ){ //&&
+                // Math.abs(events[i].relativePosition[0]) < stRadius &&
+                // Math.abs(events[i].relativePosition[1]) < stRadius) {
+                emit(events[i].relativePosition[0], events[i].relativePosition[2], -events[i].relativePosition[1]);
             }
-        },
-        channels: 2,
-    },{
-        live: function(){
-            return !timerEnded;
         }
-    })
-    .spread({
-        unit: 'relative',
-        alignHeight: 1,
-        height: [0, 0, -10],
-    })
-    .swizzle({
-        order:'xzy'
-    })
-    .point({
-        color:0xFF0000,
+    }).array({
+        id: 'eventColors',
+        width: 1e4,
+        channels: 4,
+        expr:function(emit, i, t){
+            if(i < events.length) {
+                if(i < events.length){// &&
+                    // Math.abs(events[i].relativePosition[0]) < stRadius &&
+                    // Math.abs(events[i].relativePosition[1]) < stRadius) {
+                    var color = events[i].color;
+                    emit(color[0], color[1], color[2], 1.0);
+                }
+            }
+        }
+    }).point({
+        points: '#events',
+        // color: 0x3090FF,
+        colors:'#eventColors',
+        size: 10
     });
 }
 
