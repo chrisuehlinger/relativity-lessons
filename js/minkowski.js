@@ -143,6 +143,7 @@ function initSimulation(){
     }
 
     setInterval(function(){
+        timeElapsed = (Date.now() - startTime) / 1000;
         var pos = [Math.random()*20-10, Math.random()*10];
         events.push({
             absolutePosition: pos,
