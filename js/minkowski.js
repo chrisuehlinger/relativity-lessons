@@ -14,7 +14,7 @@ three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 var timeLimit = 10,
     player = {
         absolutePosition: 0,
-        relativePostion: 0,
+        relativePosition: 0,
         velocity: 0,
         color: [0,0, 255],
         size: 5
@@ -23,7 +23,7 @@ var timeLimit = 10,
         var pos = Math.random()*20 - 10;
         return {
             absolutePosition: pos,
-            relativePostion: pos,
+            relativePosition: pos,
             velocity: 0,
             color: [100, 0, 0],
             size: 4
@@ -71,6 +71,12 @@ function initSimulation(){
         var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
         lastFrameTime = Date.now();
         player.absolutePosition += player.velocity * timeSinceLastFrame;
+
+        others.map(function(object){
+            var relativeVelocity = player.velocity - object.velocity;
+            var lorentzBoost = Math.sqrt(1 - relativeVelocity*relativeVelocity);
+            object.relativePosition = lorentzBoost * (object.absolutePosition - player.absolutePosition);
+        });
 
         updateFrame = setTimeout(update, 50);
     }, 50);
@@ -133,7 +139,7 @@ function initDiagram(numItems){
         width: numItems,
         expr: function(emit, i, t){
             if(i < objects.length) {
-                emit(objects[i].absolutePosition);
+                emit(objects[i].relativePosition);
             }
         },
         channels: 1
@@ -185,7 +191,7 @@ function initDiagram(numItems){
         history: 580,
         expr: function (emit, i, t) {
             for(var j=0; j < objects.length; j++){
-                emit(objects[j].absolutePosition);
+                emit(objects[j].relativePosition);
             }
         },
         channels: 1,
