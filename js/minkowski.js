@@ -46,10 +46,8 @@ var player = {
         return {
             absolutePosition: pos,
             relativePosition: pos,
-            velocity: 0,
             color: [0, 100, 0],
-            size: 4,
-            reference: false
+            size: 4
         };
     }),
     objects = [player].concat(others),
@@ -89,7 +87,8 @@ window.onkeydown = function (e) {
 
 function initSimulation(){
     var lastFrameTime = startTime = Date.now();
-    var updateFrame = setTimeout(function update(){
+    var updateFrame = setTimeout(update, 50);
+    function update(){
         var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
         timeElapsed = (Date.now() - startTime) / 1000;
         lastFrameTime = Date.now();
@@ -107,6 +106,13 @@ function initSimulation(){
                 object.absolutePosition += object.velocity * timeSinceLastFrame;
                 object.relativePosition = lorentzBoost * (object.absolutePosition - referenceFrame.absolutePosition);
             }
+
+            events.push({
+                absolutePosition: [object.absolutePosition, timeElapsed],
+                relativePosition: [0,0],
+                color: object.color,
+                size: object.size
+            });
         });
 
         var gamma = Math.sqrt(1 - referenceFrame.velocity*referenceFrame.velocity);
@@ -124,7 +130,19 @@ function initSimulation(){
         });
 
         updateFrame = setTimeout(update, 50);
-    }, 50);
+    }
+
+    setInterval(function(){
+        var pos = [Math.random()*20-10, Math.random()*10];
+        events.push({
+            absolutePosition: pos,
+            relativePosition: pos,
+            velocity: 0,
+            color: [0, 100, 0],
+            size: 4
+        });
+        update();
+    }, 1000);
 
     setTimeout(function(){
         console.log('ADVANCE');
@@ -196,51 +214,56 @@ function initDiagram(numItems, numEvents){
     })
     .axis({
         axis: 2
-    }).array({
-        id: 'trajectory',
-        width: 1,
-        items: numItems,
-        history: 580,
-        expr: function (emit, i, t) {
-            for(var j=0; j < objects.length; j++){
-                emit(objects[j].relativePosition);
-            }
-        },
-        channels: 1,
-    },{
-        live: function(){
-            return !timerEnded;
-        }
     })
-    .spread({
-        unit: 'relative',
-        alignHeight: 1,
-        height: [0, -10, 0],
-    })
-    .transpose({
-        order: 'yx'
-    })
-    .line({
-        // color: 0x3090FF,
-        colors:"#objectColors",
-        width: 5,
-        end:false
-    });
+    // .array({
+    //     id: 'trajectory',
+    //     width: 1,
+    //     items: numItems,
+    //     history: 580,
+    //     expr: function (emit, i, t) {
+    //         for(var j=0; j < objects.length; j++){
+    //             emit(objects[j].relativePosition);
+    //         }
+    //     },
+    //     channels: 1,
+    // },{
+    //     live: function(){
+    //         return !timerEnded;
+    //     }
+    // })
+    // .spread({
+    //     unit: 'relative',
+    //     alignHeight: 1,
+    //     height: [0, -10, 0],
+    // })
+    // .transpose({
+    //     order: 'yx'
+    // })
+    // .line({
+    //     // color: 0x3090FF,
+    //     colors:"#objectColors",
+    //     width: 5,
+    //     end:false
+    // });
 
     view.array({
         id: 'events',
-        width: numEvents,
         channels: 2,
+        width: 1e4,
         expr:function(emit, i, t){
-            emit(events[i].relativePosition[0], events[i].relativePosition[1]);
+            if(i < events.length) {
+                emit(events[i].relativePosition[0], events[i].relativePosition[1]);
+            }
         }
     }).array({
         id: 'eventColors',
-        width: numEvents,
+        width: 1e4,
         channels: 4,
         expr:function(emit, i, t){
-            var color = events[i].color;
-            emit(color[0], color[1], color[2], 1.0);
+            if(i < events.length) {
+                var color = events[i].color;
+                emit(color[0], color[1], color[2], 1.0);
+            }
         }
     }).point({
         points: '#events',
