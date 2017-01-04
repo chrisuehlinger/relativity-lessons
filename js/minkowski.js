@@ -25,13 +25,13 @@ var player = {
         absolutePosition: 0,
         relativePosition: 0,
         mass: 100,
-        thrust: 1,
+        thrust: 10,
         velocity: 0,
         color: [0,0, 255],
         size: 5,
         reference: useRelativity
     },
-    others = lodash.fill(Array(0), 0).map(function(){
+    others = lodash.fill(Array(1), 0).map(function(){
         var pos = Math.random()*20 - 10;
         return {
             absolutePosition: pos,
@@ -61,29 +61,31 @@ var present;
 
 initDiagram(objectCount, eventCount);
 
+var thrustSign = 0;
 window.onkeydown = function (e) {
     if(timerEnded) {
         return;
     }
 
-    var lorentzBoost = 1/Math.sqrt(1 - player.velocity * player.velocity);
-    var relThrust = player.thrust / (lorentzBoost * player.mass);
     switch (e.keyCode) {
         case 65:
         case 37:
-            player.velocity -= player.thrust / (lorentzBoost * player.mass);
+            thrustSign = -1;
             break;
         case 68:
         case 39:
-            player.velocity += player.thrust / (lorentzBoost * player.mass);
+            thrustSign = 1;
             break;
     }
-    console.log('v = ' + Math.round(player.velocity*10000)/10000 + 'c');
 
     if(!timerStarted){
         timerStarted = true;
         initSimulation();
     }
+}
+
+window.onkeyup = function(){
+    thrustSign = 0;
 }
 
 function initSimulation(){
@@ -96,9 +98,20 @@ function initSimulation(){
 
         var referenceFrame = objects.filter(function(obj) { return obj.reference; })[0] || {
             absolutePosition: 0,
-            velocity: 0
+            velocity: 0,
+            thrust: 0,
+            mass: 1
         }
+
+        var gamma = Math.sqrt(1 - referenceFrame.velocity*referenceFrame.velocity);
+        var relThrust = referenceFrame.thrust / (gamma * referenceFrame.mass);
+        referenceFrame.velocity += thrustSign * relThrust * timeSinceLastFrame;
+        referenceFrame.velocity = Math.max(Math.min(referenceFrame.velocity, 0.99999), -0.99999);
+        gamma = Math.sqrt(1 - referenceFrame.velocity*referenceFrame.velocity);
+
         referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
+
+        console.log('Y = ' + Math.round(gamma*10000)/10000 + ' x = ' + Math.round(referenceFrame.absolutePosition*10000)/10000 + ' v = ' + Math.round(referenceFrame.velocity*10000)/10000 + 'c');
 
         objects.map(function(object){
             if(!object.reference) {
@@ -108,8 +121,7 @@ function initSimulation(){
                 object.relativePosition = lorentzBoost * (object.absolutePosition - referenceFrame.absolutePosition);
             }
         });
-
-        var gamma = Math.sqrt(1 - referenceFrame.velocity*referenceFrame.velocity);
+        
         events.map(function(event){
             event.relativePosition = [
                 event.absolutePosition[0] - referenceFrame.absolutePosition,
