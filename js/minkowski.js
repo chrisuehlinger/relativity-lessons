@@ -12,24 +12,14 @@ three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 var timeLimit = 10,
-    lightLimit = (timeLimit-1)*2,
     player = {
         position: 0,
         velocity: 0,
         color: [0,0, 255],
         size: 5
     },
-    lights = lodash.fill(Array(lightLimit), 0).map(function(light, i){ 
-        return {
-            position: 0,
-            velocity: Math.pow(-1, i),
-            color: [255,0,0],
-            size: 4
-        };
-    }),
-    objects = [player].concat(lights),
+    objects = [player],
     objectCount = objects.length,
-    numLights = 0,
     velocity = 0,
     timerStarted = false,
     timerEnded = false,
@@ -69,26 +59,13 @@ function initSimulation(){
         lastFrameTime = Date.now();
         player.position += player.velocity * timeSinceLastFrame;
 
-        for(var i = 0; i < lights.length; i++){
-            if(i < numLights) {
-                lights[i].position += lights[i].velocity * timeSinceLastFrame;
-            } else {
-                lights[i].position = player.position;
-            }
-        }
-
         updateFrame = setTimeout(update, 50);
     }, 50);
 
-    var lightInterval = setInterval(function(){
-        numLights += 2;
-    }, 1000);
-
     setTimeout(function(){
-        console.log('ADVANCE', numLights);
+        console.log('ADVANCE');
         // present.set("index", 2);
         clearTimeout(updateFrame);
-        clearInterval(lightInterval);
         timerEnded = true;
     }, timeLimit * 1000);
 }
