@@ -62,7 +62,7 @@ window.onkeydown = function (e) {
 
         setTimeout(function(){
             console.log('ADVANCE', positions);
-            present.set("index", 2);
+            // present.set("index", 2);
             clearTimeout(updateFrame);
             timerEnded = true;
         }, 10000);
@@ -78,14 +78,15 @@ function init(){
             focus: 3,
         })
         .cartesian({
-            range: [[-10, 10], [0, 10], [-10, 10]],
-            scale: [1, 0.5, 1],
+            range: [[-10, 10], [-10, 10], [-10, 10]],
+            scale: [1, 1, 1],
         });
 
-    present = view.present({
-        index: 1
-    });
-    present.slide().reveal()
+    // present = view.present({
+    //     index: 1
+    // });
+    // present.slide().reveal()
+    view
     .transform({
         position:[0,5,0],
         rotation:[Math.PI/40,0,0]
@@ -108,10 +109,10 @@ function init(){
         divideY: 20,
         width: 1,
         opacity: 0.5,
-    }).interval({
+    }).array({
         id: 'currentPosition',
         width:1,
-        expr: function (emit, x, i, t) {
+        expr: function (emit, i, t) {
             emit(position[0], 0, -position[1]);
         },
         channels: 3,
@@ -120,16 +121,8 @@ function init(){
         color: 0x3090FF,
         size: 10,
         zBias: 1
-    }).step({
-        script:[
-            { opacity: 1},
-            { opacity: 0}
-        ]
     })
-    .end().end().end()
-    .slide().reveal({
-        duration: 1
-    }).axis({
+    .axis({
         axis: 1
     }).axis({
         axis: 2
@@ -137,7 +130,7 @@ function init(){
         axis: 3
     })
     .transform({
-        position:[0,0,0]
+        position:[0,-10,0]
     }).grid({
         axes: [1,3],
         divideX: 20,
