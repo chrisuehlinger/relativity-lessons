@@ -24,7 +24,7 @@ var player = {
         absolutePosition: [0,0],
         relativePosition: [0,0],
         mass: 100,
-        thrust: 1,
+        thrust: 5,
         velocity: [0,0],
         color: [0,0, 255],
         size: 5,
@@ -42,7 +42,7 @@ var player = {
         };
     }),
     events = lodash.fill(Array(100), 0).map(function(){
-        var pos = [0, Math.random()*40 - 20, Math.random()*60 - 10];
+        var pos = [Math.random()*40 - 20, Math.random()*40 - 20, Math.random()*60 - 10];
         return {
             absolutePosition: pos,
             relativePosition: pos,
@@ -53,6 +53,7 @@ var player = {
     objects = [player].concat(others),
     objectCount = objects.length;
 
+var thrustSign = [0,0];
 window.onkeydown = function (e) {
     if(timerEnded) {
         return;
@@ -64,28 +65,31 @@ window.onkeydown = function (e) {
     switch (e.keyCode) {
         case 65:
         case 37:
-            player.velocity[0] -= player.thrust / (lorentzBoost * player.mass);
+            thrustSign = [-1, 0];
             break;
         case 87:
         case 38:
-            player.velocity[1] += player.thrust / (lorentzBoost * player.mass);
+            thrustSign = [0, 1];
             break;
         case 68:
         case 39:
-            player.velocity[0] += player.thrust / (lorentzBoost * player.mass);
+            thrustSign = [1, 0];
             break;
         case 83:
         case 40:
-            player.velocity[1] -= player.thrust / (lorentzBoost * player.mass);
+            thrustSign = [0, -1];
             break;
     }
-    console.log('v = ', player.velocity);
 
     if(!timerStarted){
         timerStarted = true;
 
         initSimulation();
     }
+}
+
+window.onkeyup = function(){
+    thrustSign = [0, 0];
 }
 
 initDiagram(objectCount);
@@ -100,8 +104,40 @@ function initSimulation(){
 
         var referenceFrame = objects.filter(function(obj) { return obj.reference; })[0] || {
             absolutePosition: [0,0],
-            velocity: [0, 0]
+            velocity: [0, 0],
+            thrust: 0,
+            mass: 10
         }
+        var beta = Math.sqrt(referenceFrame.velocity[0]*referenceFrame.velocity[0] + referenceFrame.velocity[1]*referenceFrame.velocity[1]);
+        var gamma = Math.sqrt(1 - beta*beta);
+        var relThrust = referenceFrame.thrust / (gamma * referenceFrame.mass);
+        referenceFrame.velocity[0] += thrustSign[0]*relThrust*timeSinceLastFrame;
+        referenceFrame.velocity[1] += thrustSign[1]*relThrust*timeSinceLastFrame;
+        beta = Math.sqrt(referenceFrame.velocity[0]*referenceFrame.velocity[0] + referenceFrame.velocity[1]*referenceFrame.velocity[1]);
+        var theta = Math.atan2(referenceFrame.velocity[1], referenceFrame.velocity[0]),
+            sinTheta = Math.sin(theta),
+            cosTheta = Math.cos(theta),
+            sin2Theta = sinTheta*sinTheta,
+            cos2Theta = cosTheta*cosTheta;
+        if(Math.abs(beta) > 1) {
+            beta = 0.9999;
+            referenceFrame.velocity = [
+                beta*cosTheta,
+                beta*sinTheta
+            ];
+
+            theta = Math.atan2(referenceFrame.velocity[1], referenceFrame.velocity[0]),
+            sinTheta = Math.sin(theta),
+            cosTheta = Math.cos(theta),
+            sin2Theta = sinTheta*sinTheta,
+            cos2Theta = cosTheta*cosTheta;
+        }
+        gamma = Math.sqrt(1 - beta*beta);
+
+        console.log('Y = ' + Math.round(gamma*10000)/10000 + ' b = ' + Math.round(beta*10000)/10000 + 'c');
+        console.log('v = ', player.velocity);
+
+
         referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
         referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
 
@@ -119,9 +155,6 @@ function initSimulation(){
         //         // ];
         //     }
         // });
-
-        var beta = Math.sqrt(referenceFrame.velocity[0]*referenceFrame.velocity[0] + referenceFrame.velocity[1]*referenceFrame.velocity[1]);
-        var gamma = Math.sqrt(1 - beta*beta);
         events.map(function(event){
             event.relativePosition = [
                 event.absolutePosition[0] - referenceFrame.absolutePosition[0],
@@ -129,17 +162,15 @@ function initSimulation(){
                 event.absolutePosition[2] - timeElapsed
             ];
             if(useLorentzBoost) {
-                var theta = Math.atan2(referenceFrame.velocity[1], referenceFrame.velocity[0]),
-                    cosTheta = Math.cos(theta),
-                    sinTheta = Math.sin(theta);
+                
 
                 var x = event.relativePosition[0],
                     y = event.relativePosition[1],
                     t = event.relativePosition[2]
 
                 event.relativePosition = [
-                    -beta*gamma*t*cosTheta + (gamma*cosTheta*cosTheta + sinTheta*sinTheta)*x +(gamma-1)*y*sinTheta*cosTheta,
-                    -beta*gamma*t*sinTheta + (gamma*sinTheta*sinTheta + cosTheta*cosTheta)*y +(gamma-1)*x*sinTheta*cosTheta,
+                    -beta*gamma*t*cosTheta + (gamma*cos2Theta + sin2Theta)*x +(gamma-1)*y*sinTheta*cosTheta,
+                    -beta*gamma*t*sinTheta + (gamma*sin2Theta + cos2Theta)*y +(gamma-1)*x*sinTheta*cosTheta,
                     gamma*t - gamma*beta*x*cosTheta - gamma*beta*y*sinTheta
                 ];
             }
