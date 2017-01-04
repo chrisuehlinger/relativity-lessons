@@ -149,11 +149,11 @@ function init(){
         opacity: 0.5,
     })
     .end()
-    .interval({
+    .array({
         id: 'trajectory',
         width: 200,
-        expr: function (emit, x, i, t) {
-            y = i/20;
+        expr: function (emit, i, t) {
+            y = -10 + i/20;
             if(i < positions.length) {
                 var thisPosition = positions[i];
                 // console.log(thisPosition)
