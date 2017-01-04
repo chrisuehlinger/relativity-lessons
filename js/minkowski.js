@@ -16,14 +16,15 @@ var timeLimit = 100,
     timerEnded = false,
     timeElapsed = 0;
 
-var useRelativity = false,
-    useLorentzBoost = false;
+var useRelativity = true,
+    useLorentzBoost = true,
+    showLightCones = true;
 
 var player = {
         absolutePosition: 0,
         relativePosition: 0,
         mass: 100,
-        thrust: 0.5,
+        thrust: 1,
         velocity: 0,
         color: [0,0, 255],
         size: 5,
@@ -100,7 +101,6 @@ function initSimulation(){
 
     setTimeout(function(){
         console.log('ADVANCE');
-        // present.set("index", 2);
         clearTimeout(updateFrame);
         timerEnded = true;
     }, timeLimit * 1000);
@@ -112,22 +112,10 @@ function initDiagram(numItems){
             focus: 3,
         })
         .cartesian({
-            range: [[-10, 10], [0, 10], [-10, 10]],
-            scale: [2, 1, 2],
+            range: [[-10, 10], [-10, 10], [-10, 10]],
+            scale: [1, 1, 1],
         });
-
-    // present = view.present({
-    //     index: 1
-    // });
-    // present.slide().reveal()
     view
-    .transform()
-    // .step({
-    //     script: [
-    //         {position:[0,5,0]},
-    //         {position:[0,0,0]},
-    //     ]
-    // })
     .axis({
         detail: 1,
     })
@@ -145,19 +133,11 @@ function initDiagram(numItems){
         opacity: 0.5,
         zBias: -5,
     })
-    // .step({
-    //     script:[
-    //         { rangeY: [0,0] },
-    //         { rangeY: [0,10]}
-    //     ]
-    // })
     .array({
         id: 'currentPosition',
         width: numItems,
         expr: function(emit, i, t){
-            if(i < objects.length) {
-                emit(objects[i].relativePosition);
-            }
+            emit(objects[i].relativePosition);
         },
         channels: 1
     })
@@ -166,10 +146,8 @@ function initDiagram(numItems){
         width: numItems,
         channels: 4,
         expr: function(emit, i, t){
-            if(i < objects.length) {
-                var color = objects[i].color;
-                emit(color[0], color[1], color[2], 1.0);
-            }
+            var color = objects[i].color;
+            emit(color[0], color[1], color[2], 1.0);
         },
     })
     .array({
@@ -189,16 +167,6 @@ function initDiagram(numItems){
         // size: 10
         sizes: "#objectSizes"
     })
-    // .step({
-    //     script:[
-    //         { opacity: 1},
-    //         { opacity: 0}
-    //     ]
-    // })
-    .end()//.end()
-    // .slide().reveal({
-    //     duration: 1
-    // })
     .axis({
         axis: 2
     }).array({
@@ -219,7 +187,7 @@ function initDiagram(numItems){
     })
     .spread({
         unit: 'relative',
-        alignHeight: -1,
+        alignHeight: 1,
         height: [0, -10, 0],
     })
     .transpose({
@@ -231,6 +199,22 @@ function initDiagram(numItems){
         width: 5,
         end:false
     });
+
+    view.array({
+        width: 2,
+        items: 2,
+        channels: 2,
+        live:false,
+        data:[
+            [-10, -10], [-10,10],
+            [10, 10], [10, -10]
+        ]
+    }).line({
+        color:0xFFFF00,
+        width: 5,
+        visible: showLightCones,
+        end: false
+    })
 
 }
 
