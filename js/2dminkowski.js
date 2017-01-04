@@ -11,11 +11,13 @@ three = mathbox.three;
 three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
-var position = [0,0],
-    velocity = [0,0],
+var timeLimit = 100,
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
+
+var position = [0,0],
+    velocity = [0,0];
 
 window.onkeydown = function (e) {
     if(timerEnded) {
@@ -47,10 +49,10 @@ window.onkeydown = function (e) {
 
         var lastFrameTime = Date.now();
         var updateFrame = setTimeout(function update(){
-            var timeSinceLastFrame = Date.now() - lastFrameTime;
+            var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
             lastFrameTime = Date.now();
-            position[0] += velocity[0] / (1000/timeSinceLastFrame);
-            position[1] += velocity[1] / (1000/timeSinceLastFrame);
+            position[0] += velocity[0] * timeSinceLastFrame;
+            position[1] += velocity[1] * timeSinceLastFrame;
 
             updateFrame = setTimeout(update, 50);
         }, 50);
@@ -59,11 +61,9 @@ window.onkeydown = function (e) {
             console.log('ADVANCE');
             clearTimeout(updateFrame);
             timerEnded = true;
-        }, 10000);
+    }, timeLimit * 1000);
     }
 }
-
-var present;
 
 init();
 function init(){    
