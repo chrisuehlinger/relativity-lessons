@@ -12,14 +12,22 @@ three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 var timeLimit = 100,
-    player = {
+    timerStarted = false,
+    timerEnded = false,
+    timeElapsed = 0;
+
+var useRelativity = false,
+    useLorentzBoost = false;
+
+var player = {
         absolutePosition: 0,
         relativePosition: 0,
         mass: 100,
         thrust: 0.5,
         velocity: 0,
         color: [0,0, 255],
-        size: 5
+        size: 5,
+        reference: useRelativity
     },
     others = lodash.fill(Array(10), 0).map(function(){
         var pos = Math.random()*20 - 10;
@@ -28,15 +36,12 @@ var timeLimit = 100,
             relativePosition: pos,
             velocity: 0,
             color: [100, 0, 0],
-            size: 4
+            size: 4,
+            reference: false
         };
     }),
     objects = [player].concat(others),
-    objectCount = objects.length,
-    velocity = 0,
-    timerStarted = false,
-    timerEnded = false,
-    timeElapsed = 0;
+    objectCount = objects.length
 
 console.log(objects)
 
@@ -74,12 +79,20 @@ function initSimulation(){
     var updateFrame = setTimeout(function update(){
         var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
         lastFrameTime = Date.now();
-        player.absolutePosition += player.velocity * timeSinceLastFrame;
 
-        others.map(function(object){
-            var relativeVelocity = player.velocity - object.velocity;
-            var lorentzBoost = Math.sqrt(1 - relativeVelocity*relativeVelocity);
-            object.relativePosition = lorentzBoost * (object.absolutePosition - player.absolutePosition);
+        var referenceFrame = objects.filter(function(obj) { return obj.reference; })[0] || {
+            absolutePosition: 0,
+            velocity: 0
+        }
+        referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
+
+        objects.map(function(object){
+            if(!object.reference) {
+                var relativeVelocity = referenceFrame.velocity - object.velocity;
+                var lorentzBoost = useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
+                object.absolutePosition += object.velocity * timeSinceLastFrame;
+                object.relativePosition = lorentzBoost * (object.absolutePosition - referenceFrame.absolutePosition);
+            }
         });
 
         updateFrame = setTimeout(update, 50);
