@@ -17,7 +17,7 @@ var timeLimit = 100,
     timeElapsed = 0;
 
 var useRelativity = true,
-    useLorentzBoost = false,
+    useLorentzBoost = true,
     showLightCones = true;
 
 var player = {
@@ -96,8 +96,8 @@ window.onkeydown = function (e) {
                     object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
                     object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
                     object.relativePosition = [
-                        (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
-                        (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
+                        lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
+                        lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
                     ];
                 }
             });
