@@ -11,10 +11,12 @@ three = mathbox.three;
 three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
-var timeLimit = 10,
+var timeLimit = 100,
     player = {
         absolutePosition: 0,
         relativePosition: 0,
+        mass: 100,
+        thrust: 0.5,
         velocity: 0,
         color: [0,0, 255],
         size: 5
@@ -47,17 +49,19 @@ window.onkeydown = function (e) {
         return;
     }
 
+    var lorentzBoost = 1/Math.sqrt(1 - player.velocity * player.velocity);
+    var relThrust = player.thrust / (lorentzBoost * player.mass);
     switch (e.keyCode) {
         case 65:
         case 37:
-            player.velocity += (-1 - player.velocity)*0.05;
+            player.velocity -= player.thrust / (lorentzBoost * player.mass);
             break;
         case 68:
         case 39:
-            player.velocity += (1-player.velocity)*0.05;
+            player.velocity += player.thrust / (lorentzBoost * player.mass);
             break;
     }
-    // console.log('v = ' + Math.round(player.velocity*10000)/10000 + 'c');
+    console.log('v = ' + Math.round(player.velocity*10000)/10000 + 'c');
 
     if(!timerStarted){
         timerStarted = true;
