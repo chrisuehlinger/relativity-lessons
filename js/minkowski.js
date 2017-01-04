@@ -13,17 +13,30 @@ three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 var timeLimit = 10,
     player = {
-        position: 0,
+        absolutePosition: 0,
+        relativePostion: 0,
         velocity: 0,
         color: [0,0, 255],
         size: 5
     },
-    objects = [player],
+    others = lodash.fill(Array(10), 0).map(function(){
+        var pos = Math.random()*20 - 10;
+        return {
+            absolutePosition: pos,
+            relativePostion: pos,
+            velocity: 0,
+            color: [100, 0, 0],
+            size: 4
+        };
+    }),
+    objects = [player].concat(others),
     objectCount = objects.length,
     velocity = 0,
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
+
+console.log(objects)
 
 var present;
 
@@ -57,7 +70,7 @@ function initSimulation(){
     var updateFrame = setTimeout(function update(){
         var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
         lastFrameTime = Date.now();
-        player.position += player.velocity * timeSinceLastFrame;
+        player.absolutePosition += player.velocity * timeSinceLastFrame;
 
         updateFrame = setTimeout(update, 50);
     }, 50);
@@ -120,7 +133,7 @@ function initDiagram(numItems){
         width: numItems,
         expr: function(emit, i, t){
             if(i < objects.length) {
-                emit(objects[i].position);
+                emit(objects[i].absolutePosition);
             }
         },
         channels: 1
@@ -131,7 +144,8 @@ function initDiagram(numItems){
         channels: 4,
         expr: function(emit, i, t){
             if(i < objects.length) {
-                emit(objects[i].color[0],objects[i].color[1],objects[i].color[2], 1.0);
+                var color = objects[i].color;
+                emit(color[0], color[1], color[2], 1.0);
             }
         },
     })
@@ -171,7 +185,7 @@ function initDiagram(numItems){
         history: 580,
         expr: function (emit, i, t) {
             for(var j=0; j < objects.length; j++){
-                emit(objects[j].position);
+                emit(objects[j].absolutePosition);
             }
         },
         channels: 1,
