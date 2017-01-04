@@ -11,16 +11,24 @@ three = mathbox.three;
 three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
-var objects = [],
+var timeLimit = 10,
+    lightLimit = (timeLimit-1)*2,
     player = {
         position: 0,
         velocity: 0,
-        color: 0x3090FF
+        color: [0,0, 255],
+        size: 5
     },
-    lights = [];
-
-var position = lodash.fill(Array(21),0),
-    positions = [lodash.fill(Array(21),0)],
+    lights = lodash.fill(Array(lightLimit), 0).map(function(light, i){ 
+        return {
+            position: 0,
+            velocity: Math.pow(-1, i),
+            color: [255,0,0],
+            size: 4
+        };
+    }),
+    objects = [player].concat(lights),
+    objectCount = objects.length,
     numLights = 0,
     velocity = 0,
     timerStarted = false,
@@ -29,7 +37,7 @@ var position = lodash.fill(Array(21),0),
 
 var present;
 
-initDiagram(21);
+initDiagram(objectCount);
 
 window.onkeydown = function (e) {
     if(timerEnded) {
@@ -39,14 +47,14 @@ window.onkeydown = function (e) {
     switch (e.keyCode) {
         case 65:
         case 37:
-            velocity += (-1 - velocity)*0.05;
+            player.velocity += (-1 - player.velocity)*0.05;
             break;
         case 68:
         case 39:
-            velocity += (1-velocity)*0.05;
+            player.velocity += (1-player.velocity)*0.05;
             break;
     }
-    console.log('v = ' + Math.round(velocity*10000)/10000 + 'c');
+    // console.log('v = ' + Math.round(player.velocity*10000)/10000 + 'c');
 
     if(!timerStarted){
         timerStarted = true;
@@ -57,28 +65,22 @@ window.onkeydown = function (e) {
 function initSimulation(){
     var lastFrameTime = Date.now();
     var updateFrame = setTimeout(function update(){
-        var timeSinceLastFrame = Date.now() - lastFrameTime;
+        var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
         lastFrameTime = Date.now();
-        position[0] += velocity / (1000/timeSinceLastFrame);
-        for(var i = 1; i < position.length; i++){
-            var offset = i-1;
-            if(offset < numLights) {
-                position[i] += Math.pow(-1, offset) / (1000/timeSinceLastFrame);
+        player.position += player.velocity * timeSinceLastFrame;
+
+        for(var i = 0; i < lights.length; i++){
+            if(i < numLights) {
+                lights[i].position += lights[i].velocity * timeSinceLastFrame;
             } else {
-                position[i] = position[0];
+                lights[i].position = player.position;
             }
         }
-        positions.push(position.slice());
-        // if(positions.length > 200) {
-        //     positions = positions.slice(1);
-        // }
 
         updateFrame = setTimeout(update, 50);
     }, 50);
 
     var lightInterval = setInterval(function(){
-        // position.push(position[0]);
-        // position.push(position[0]);
         numLights += 2;
     }, 1000);
 
@@ -88,7 +90,7 @@ function initSimulation(){
         clearTimeout(updateFrame);
         clearInterval(lightInterval);
         timerEnded = true;
-    }, 10000);
+    }, timeLimit * 1000);
 }
 
 function initDiagram(numItems){    
@@ -139,12 +141,39 @@ function initDiagram(numItems){
     .array({
         id: 'currentPosition',
         width: numItems,
-        data: position,
+        expr: function(emit, i, t){
+            if(i < objects.length) {
+                emit(objects[i].position);
+            }
+        },
         channels: 1
-    }).point({
+    })
+    .array({
+        id:'objectColors',
+        width: numItems,
+        channels: 4,
+        expr: function(emit, i, t){
+            if(i < objects.length) {
+                emit(objects[i].color[0],objects[i].color[1],objects[i].color[2], 1.0);
+            }
+        },
+    })
+    .array({
+        id:'objectSizes',
+        width: numItems,
+        channels: 1,
+        expr: function(emit, i, t){
+            if(i < objects.length) {
+                emit(objects[i].size);
+            }
+        },
+    })
+    .point({
         points: '#currentPosition',
-        color: 0x3090FF,
-        size: 10
+        // color: 0x3090FF,
+        colors:'#objectColors',
+        // size: 10
+        sizes: "#objectSizes"
     })
     // .step({
     //     script:[
@@ -164,8 +193,9 @@ function initDiagram(numItems){
         items: numItems,
         history: 580,
         expr: function (emit, i, t) {
-            for(var j=0; j < position.length; j++)
-                emit(position[j]);
+            for(var j=0; j < objects.length; j++){
+                emit(objects[j].position);
+            }
         },
         channels: 1,
     },{
@@ -182,10 +212,11 @@ function initDiagram(numItems){
         order: 'yx'
     })
     .line({
-        color: 0x3090FF,
+        // color: 0x3090FF,
+        colors:"#objectColors",
         width: 5,
         end:false
-    });;
+    });
 
 }
 
