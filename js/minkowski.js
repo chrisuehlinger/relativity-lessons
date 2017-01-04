@@ -12,6 +12,7 @@ three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 var timeLimit = 100,
+    stRadius = 10,
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
@@ -106,13 +107,6 @@ function initSimulation(){
                 object.absolutePosition += object.velocity * timeSinceLastFrame;
                 object.relativePosition = lorentzBoost * (object.absolutePosition - referenceFrame.absolutePosition);
             }
-
-            events.push({
-                absolutePosition: [object.absolutePosition, timeElapsed],
-                relativePosition: [0,0],
-                color: object.color,
-                size: object.size
-            });
         });
 
         var gamma = Math.sqrt(1 - referenceFrame.velocity*referenceFrame.velocity);
@@ -129,6 +123,10 @@ function initSimulation(){
             }
         });
 
+        events = events.filter(function(event){
+            return event
+        });
+
         updateFrame = setTimeout(update, 50);
     }
 
@@ -141,6 +139,16 @@ function initSimulation(){
             color: [0, 100, 0],
             size: 4
         });
+
+        objects.map(function(object){
+            events.push({
+                absolutePosition: [object.absolutePosition, timeElapsed],
+                relativePosition: [0,0],
+                color: object.color,
+                size: object.size
+            });
+        });
+
         update();
     }, 1000);
 
@@ -157,8 +165,8 @@ function initDiagram(numItems, numEvents){
             focus: 3,
         })
         .cartesian({
-            range: [[-10, 10], [-10, 10], [-10, 10]],
-            scale: [1, 1, 1],
+            range: [[-stRadius, stRadius], [-stRadius, stRadius], [0, 0]],
+            scale: [2, 2, 2],
         });
     view
     .axis({
@@ -172,8 +180,8 @@ function initDiagram(numItems, numEvents){
         width: 2
     })
     .grid({
-        divideX: 20,
-        divideY: 10,
+        divideX: 2*stRadius,
+        divideY: 2*stRadius,
         width: 1,
         opacity: 0.5,
         zBias: -5,
@@ -214,7 +222,7 @@ function initDiagram(numItems, numEvents){
     })
     .axis({
         axis: 2
-    })
+    });
     // .array({
     //     id: 'trajectory',
     //     width: 1,
@@ -251,7 +259,9 @@ function initDiagram(numItems, numEvents){
         channels: 2,
         width: 1e4,
         expr:function(emit, i, t){
-            if(i < events.length) {
+            if(i < events.length &&
+                Math.abs(events[i].relativePosition[0]) < stRadius &&
+                Math.abs(events[i].relativePosition[1]) < stRadius) {
                 emit(events[i].relativePosition[0], events[i].relativePosition[1]);
             }
         }
@@ -261,8 +271,12 @@ function initDiagram(numItems, numEvents){
         channels: 4,
         expr:function(emit, i, t){
             if(i < events.length) {
-                var color = events[i].color;
-                emit(color[0], color[1], color[2], 1.0);
+                if(i < events.length &&
+                    Math.abs(events[i].relativePosition[0]) < stRadius &&
+                    Math.abs(events[i].relativePosition[1]) < stRadius) {
+                    var color = events[i].color;
+                    emit(color[0], color[1], color[2], 1.0);
+                }
             }
         }
     }).point({
@@ -278,8 +292,8 @@ function initDiagram(numItems, numEvents){
         channels: 2,
         live:false,
         data:[
-            [-10, -10], [-10,10],
-            [10, 10], [10, -10]
+            [-stRadius, -stRadius], [-stRadius,stRadius],
+            [stRadius, stRadius], [stRadius, -stRadius]
         ]
     }).line({
         color:0xFFFF00,
