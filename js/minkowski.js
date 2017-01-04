@@ -11,29 +11,39 @@ three = mathbox.three;
 three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
-var timeLimit = 10,
-    lightLimit = (timeLimit-1)*2,
-    player = {
-        position: 0,
-        velocity: 0,
-        color: [0,0, 255],
-        size: 5
-    },
-    lights = lodash.fill(Array(lightLimit), 0).map(function(light, i){ 
-        return {
-            position: 0,
-            velocity: Math.pow(-1, i),
-            color: [255,0,0],
-            size: 4
-        };
-    }),
-    objects = [player].concat(lights),
-    objectCount = objects.length,
-    numLights = 0,
-    velocity = 0,
+var timeLimit = 100,
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
+
+var useRelativity = false,
+    useLorentzBoost = false;
+
+var player = {
+        absolutePosition: 0,
+        relativePosition: 0,
+        mass: 100,
+        thrust: 0.5,
+        velocity: 0,
+        color: [0,0, 255],
+        size: 5,
+        reference: useRelativity
+    },
+    others = lodash.fill(Array(10), 0).map(function(){
+        var pos = Math.random()*20 - 10;
+        return {
+            absolutePosition: pos,
+            relativePosition: pos,
+            velocity: 0,
+            color: [100, 0, 0],
+            size: 4,
+            reference: false
+        };
+    }),
+    objects = [player].concat(others),
+    objectCount = objects.length
+
+console.log(objects)
 
 var present;
 
@@ -44,17 +54,19 @@ window.onkeydown = function (e) {
         return;
     }
 
+    var lorentzBoost = 1/Math.sqrt(1 - player.velocity * player.velocity);
+    var relThrust = player.thrust / (lorentzBoost * player.mass);
     switch (e.keyCode) {
         case 65:
         case 37:
-            player.velocity += (-1 - player.velocity)*0.05;
+            player.velocity -= player.thrust / (lorentzBoost * player.mass);
             break;
         case 68:
         case 39:
-            player.velocity += (1-player.velocity)*0.05;
+            player.velocity += player.thrust / (lorentzBoost * player.mass);
             break;
     }
-    // console.log('v = ' + Math.round(player.velocity*10000)/10000 + 'c');
+    console.log('v = ' + Math.round(player.velocity*10000)/10000 + 'c');
 
     if(!timerStarted){
         timerStarted = true;
@@ -67,28 +79,29 @@ function initSimulation(){
     var updateFrame = setTimeout(function update(){
         var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
         lastFrameTime = Date.now();
-        player.position += player.velocity * timeSinceLastFrame;
 
-        for(var i = 0; i < lights.length; i++){
-            if(i < numLights) {
-                lights[i].position += lights[i].velocity * timeSinceLastFrame;
-            } else {
-                lights[i].position = player.position;
-            }
+        var referenceFrame = objects.filter(function(obj) { return obj.reference; })[0] || {
+            absolutePosition: 0,
+            velocity: 0
         }
+        referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
+
+        objects.map(function(object){
+            if(!object.reference) {
+                var relativeVelocity = referenceFrame.velocity - object.velocity;
+                var lorentzBoost = useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
+                object.absolutePosition += object.velocity * timeSinceLastFrame;
+                object.relativePosition = lorentzBoost * (object.absolutePosition - referenceFrame.absolutePosition);
+            }
+        });
 
         updateFrame = setTimeout(update, 50);
     }, 50);
 
-    var lightInterval = setInterval(function(){
-        numLights += 2;
-    }, 1000);
-
     setTimeout(function(){
-        console.log('ADVANCE', numLights);
+        console.log('ADVANCE');
         // present.set("index", 2);
         clearTimeout(updateFrame);
-        clearInterval(lightInterval);
         timerEnded = true;
     }, timeLimit * 1000);
 }
@@ -143,7 +156,7 @@ function initDiagram(numItems){
         width: numItems,
         expr: function(emit, i, t){
             if(i < objects.length) {
-                emit(objects[i].position);
+                emit(objects[i].relativePosition);
             }
         },
         channels: 1
@@ -154,7 +167,8 @@ function initDiagram(numItems){
         channels: 4,
         expr: function(emit, i, t){
             if(i < objects.length) {
-                emit(objects[i].color[0],objects[i].color[1],objects[i].color[2], 1.0);
+                var color = objects[i].color;
+                emit(color[0], color[1], color[2], 1.0);
             }
         },
     })
@@ -194,7 +208,7 @@ function initDiagram(numItems){
         history: 580,
         expr: function (emit, i, t) {
             for(var j=0; j < objects.length; j++){
-                emit(objects[j].position);
+                emit(objects[j].relativePosition);
             }
         },
         channels: 1,
