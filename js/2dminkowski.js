@@ -13,7 +13,6 @@ three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 var position = [0,0],
     velocity = [0,0],
-    positions = [[0,0]],
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
@@ -52,17 +51,12 @@ window.onkeydown = function (e) {
             lastFrameTime = Date.now();
             position[0] += velocity[0] / (1000/timeSinceLastFrame);
             position[1] += velocity[1] / (1000/timeSinceLastFrame);
-            positions.push([position[0], position[1]]);
-            if(positions.length > 200) {
-                positions = positions.slice(1);
-            }
 
             updateFrame = setTimeout(update, 50);
         }, 50);
 
         setTimeout(function(){
-            console.log('ADVANCE', positions);
-            // present.set("index", 2);
+            console.log('ADVANCE');
             clearTimeout(updateFrame);
             timerEnded = true;
         }, 10000);
@@ -82,10 +76,6 @@ function init(){
             scale: [1, 1, 1],
         });
 
-    // present = view.present({
-    //     index: 1
-    // });
-    // present.slide().reveal()
     view
     .transform({
         position:[0,5,0],
@@ -116,7 +106,8 @@ function init(){
             emit(position[0], 0, -position[1]);
         },
         channels: 3,
-    }).point({
+    })
+    .point({
         points: '#currentPosition',
         color: 0x3090FF,
         size: 10,
@@ -151,21 +142,24 @@ function init(){
     .end()
     .array({
         id: 'trajectory',
-        width: 200,
+        width: 1,
+        items: 1,
+        history: 580,
         expr: function (emit, i, t) {
-            y = -10 + i/20;
-            if(i < positions.length) {
-                var thisPosition = positions[i];
-                // console.log(thisPosition)
-                emit(thisPosition[0], y, -thisPosition[1]);
-            }
+            emit(position[0],-position[1])
         },
-        channels: 3,
-    }).line({
-        points: '#trajectory',
-        color: 0x3090FF,
-        width: 5,
-    });;
-
+        channels: 2,
+    })
+    .spread({
+        unit: 'relative',
+        alignHeight: 1,
+        height: [0, 0, -10],
+    })
+    .swizzle({
+        order:'xzy'
+    })
+    .point({
+        color:0xFF0000,
+    });
 }
 
