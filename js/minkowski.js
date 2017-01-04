@@ -30,7 +30,7 @@ var player = {
         size: 5,
         reference: useRelativity
     },
-    others = lodash.fill(Array(10), 0).map(function(){
+    others = lodash.fill(Array(0), 0).map(function(){
         var pos = Math.random()*20 - 10;
         return {
             absolutePosition: pos,
@@ -41,14 +41,26 @@ var player = {
             reference: false
         };
     }),
+    events = lodash.fill(Array(100), 0).map(function(){
+        var pos = [Math.random()*40 - 20, Math.random()*60 - 10];
+        return {
+            absolutePosition: pos,
+            relativePosition: pos,
+            velocity: 0,
+            color: [0, 100, 0],
+            size: 4,
+            reference: false
+        };
+    }),
     objects = [player].concat(others),
-    objectCount = objects.length
+    eventCount = events.length,
+    objectCount = objects.length;
 
-console.log(objects)
+console.log(events)
 
 var present;
 
-initDiagram(objectCount);
+initDiagram(objectCount, eventCount);
 
 window.onkeydown = function (e) {
     if(timerEnded) {
@@ -76,9 +88,10 @@ window.onkeydown = function (e) {
 }
 
 function initSimulation(){
-    var lastFrameTime = Date.now();
+    var lastFrameTime = startTime = Date.now();
     var updateFrame = setTimeout(function update(){
         var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
+        timeElapsed = (Date.now() - startTime) / 1000;
         lastFrameTime = Date.now();
 
         var referenceFrame = objects.filter(function(obj) { return obj.reference; })[0] || {
@@ -96,6 +109,20 @@ function initSimulation(){
             }
         });
 
+        var gamma = Math.sqrt(1 - referenceFrame.velocity*referenceFrame.velocity);
+        events.map(function(event){
+            event.relativePosition = [
+                event.absolutePosition[0] - referenceFrame.absolutePosition,
+                event.absolutePosition[1] - timeElapsed
+            ];
+            if(useLorentzBoost) {
+                event.relativePosition = [
+                    gamma*(event.relativePosition[0] - referenceFrame.velocity*event.relativePosition[1]),
+                    gamma*(event.relativePosition[1] - referenceFrame.velocity*event.relativePosition[0])
+                ];
+            }
+        });
+
         updateFrame = setTimeout(update, 50);
     }, 50);
 
@@ -106,7 +133,7 @@ function initSimulation(){
     }, timeLimit * 1000);
 }
 
-function initDiagram(numItems){    
+function initDiagram(numItems, numEvents){    
     var view = mathbox
         .set({
             focus: 3,
@@ -199,6 +226,28 @@ function initDiagram(numItems){
         width: 5,
         end:false
     });
+
+    view.array({
+        id: 'events',
+        width: numEvents,
+        channels: 2,
+        expr:function(emit, i, t){
+            emit(events[i].relativePosition[0], events[i].relativePosition[1]);
+        }
+    }).array({
+        id: 'eventColors',
+        width: numEvents,
+        channels: 4,
+        expr:function(emit, i, t){
+            var color = events[i].color;
+            emit(color[0], color[1], color[2], 1.0);
+        }
+    }).point({
+        points: '#events',
+        // color: 0x3090FF,
+        colors:'#eventColors',
+        size: 10
+    })
 
     view.array({
         width: 2,
