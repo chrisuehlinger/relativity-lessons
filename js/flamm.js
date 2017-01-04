@@ -21,8 +21,8 @@ view = mathbox
 })
 .polar({
     bend: 1,
-    range: [[-2*π, 2*π], [0, 1], [-1, 1]],
-    scale: [2, 1, 1],
+    range: [[-2*π, 2*π], [0, 100], [-50, 50]],
+    scale: [1, 1, 1],
     helix: 0,
 });
 
@@ -64,18 +64,25 @@ view.transform({
 });
 
 view
-.interval({
-    id: 'sampler',
-    width: 256,
-    expr: function (emit, x, i, t) {
-        emit(x, .5 + .5 * Math.sin((x + t) * 3));
+.area({
+    width: 50,
+    height: 50,
+    expr: function(emit, theta, r, i, j, time, delta) {
+        var rS = 9*Math.sin(time)+11;
+        if((r-rS) > 0){
+            var w = 2*Math.sqrt(rS*(r-rS));
+            emit(theta, r, w);
+        }
     },
-    channels: 2,
+    channels: 3
 })
-.line({
-    points: '#sampler',
-    color: 0x3090FF,
-    width: 5,
+.surface({
+    color: '#f00',
+    opacity: .75,
+    lineX: true,
+    lineY: true,
+    fill: false,
+    zBias: -10,
 });
 
 view.grid({
