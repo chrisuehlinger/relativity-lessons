@@ -12,13 +12,13 @@ three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 var timeLimit = 100,
-    stRadius = 10,
+    stRadius = 20,
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
 
 var useRelativity = true,
-    useLorentzBoost = true,
+    useLorentzBoost = false,
     showLightCones = true;
 
 var player = {
@@ -43,7 +43,7 @@ var player = {
         };
     }),
     hmm = -10,
-    events = lodash.fill(Array(100), 0).map(function(){
+    events = lodash.fill(Array(0), 0).map(function(){
         var pos = [Math.random()*40 - 20, Math.random()*60 - 10];
         return {
             absolutePosition: pos,
@@ -63,6 +63,14 @@ var player = {
             size: 4
         };
     })),
+    blackHole = {
+        absolutePosition: -15,
+        relativePosition: -15,
+        radius: 1,
+        color: [0, 0, 0],
+        size: 4
+    },
+    blackHoles = [blackHole],
     objects = [player].concat(others),
     eventCount = events.length,
     objectCount = objects.length;
@@ -146,7 +154,9 @@ function initSimulation(){
 
         referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
 
-        console.log('Y = ' + Math.round(gamma*10000)/10000 + ' x = ' + Math.round(referenceFrame.absolutePosition*10000)/10000 + ' v = ' + Math.round(referenceFrame.velocity*10000)/10000 + 'c');
+        referenceFrame.absolutePosition
+
+        console.log('Y = ' + Math.round(gamma*1000)/1000 + ' x = ' + Math.round(referenceFrame.absolutePosition*1000)/1000 + ' v = ' + Math.round(referenceFrame.velocity*1000)/1000 + 'c');
 
         objects.map(function(object){
             if(!object.reference) {
@@ -159,6 +169,10 @@ function initSimulation(){
                     object.relativePosition = relGamma * object.relativePosition;
                 }
             }
+        });
+
+        blackHoles.map(function(object){
+            object.relativePosition = (object.absolutePosition - referenceFrame.absolutePosition);
         });
         
         events.map(function(event){
@@ -184,13 +198,13 @@ function initSimulation(){
     setInterval(function(){
         timeElapsed = (Date.now() - startTime) / 1000;
         var pos = [Math.random()*20-10, Math.random()*10];
-        events.push({
-            absolutePosition: pos,
-            relativePosition: pos,
-            velocity: 0,
-            color: [0, 100, 0],
-            size: 4
-        });
+        // events.push({
+        //     absolutePosition: pos,
+        //     relativePosition: pos,
+        //     velocity: 0,
+        //     color: [0, 100, 0],
+        //     size: 4
+        // });
 
         objects.map(function(object){
             events.push({
@@ -310,6 +324,28 @@ function initDiagram(){
         points: '#events',
         // color: 0x3090FF,
         colors:'#eventColors',
+        size: 10
+    })
+
+
+
+    view.array({
+        id: 'blackHoles',
+        channels: 1,
+        items: 3,
+        width: 10,
+        expr:function(emit, i, t){
+            if(i < blackHoles.length){
+                // Math.abs(events[i].relativePosition[0]) < stRadius &&
+                // Math.abs(events[i].relativePosition[1]) < stRadius) {
+                emit(blackHoles[i].relativePosition);
+                emit(blackHoles[i].relativePosition - blackHoles[i].radius);
+                emit(blackHoles[i].relativePosition + blackHoles[i].radius);
+            }
+        }
+    }).point({
+        points: '#blackHoles',
+        color: 0,
         size: 10
     })
 
