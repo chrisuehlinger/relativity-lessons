@@ -32,7 +32,7 @@ var player = {
         reference: useRelativity
     },
     others = lodash.fill(Array(1), 0).map(function(){
-        var pos = 5;//aMath.random()*20 - 10;
+        var pos = 9;//aMath.random()*20 - 10;
         return {
             absolutePosition: pos,
             relativePosition: pos,
@@ -47,6 +47,7 @@ var player = {
         return {
             absolutePosition: pos,
             relativePosition: pos,
+            velocity: 0,
             color: [0, 100, 0],
             size: 4
         };
@@ -184,6 +185,7 @@ function initSimulation(){
             events.push({
                 absolutePosition: [object.absolutePosition, timeElapsed],
                 relativePosition: [0,0],
+                velocity: 0,
                 color: object.color,
                 size: object.size
             });
