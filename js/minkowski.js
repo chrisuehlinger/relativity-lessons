@@ -19,24 +19,24 @@ var timeLimit = 100,
 
 var useRelativity = true,
     useLorentzBoost = true,
-    showLightCones = false;
+    showLightCones = true;
 
 var player = {
         absolutePosition: 0,
         relativePosition: 0,
         mass: 100,
         thrust: 10,
-        velocity: 0,
+        velocity: 0.5,
         color: [0,0, 255],
         size: 5,
         reference: useRelativity
     },
     others = lodash.fill(Array(1), 0).map(function(){
-        var pos = Math.random()*20 - 10;
+        var pos = 5;//aMath.random()*20 - 10;
         return {
             absolutePosition: pos,
             relativePosition: pos,
-            velocity: -0.5,
+            velocity: 0.5,
             color: [100, 0, 0],
             size: 4,
             reference: false
@@ -60,6 +60,10 @@ console.log(events)
 var present;
 
 initDiagram(objectCount, eventCount);
+setTimeout(function(){
+    timerStarted = true;
+    initSimulation();
+}, 1000);
 
 var thrustSign = 0;
 window.onkeydown = function (e) {
@@ -96,10 +100,10 @@ window.onkeydown = function (e) {
             console.log('LIGHT!');
     }
 
-    if(!timerStarted){
-        timerStarted = true;
-        initSimulation();
-    }
+    // if(!timerStarted){
+    //     timerStarted = true;
+    //     initSimulation();
+    // }
 }
 
 
@@ -139,8 +143,8 @@ function initSimulation(){
 
                 if (useLorentzBoost){
                     var relativeVelocity = (referenceFrame.velocity - object.velocity) / (1 - referenceFrame.velocity*object.velocity);
-                    var relGamma = Math.sqrt(1 - relativeVelocity*relativeVelocity);
-                    object.relativePosition = relGamma ? relGamma * object.relativePosition : object.relativePosition;
+                    var relGamma = Math.sqrt(1 - relativeVelocity*relativeVelocity) || 1;
+                    object.relativePosition = relGamma * object.relativePosition;
                 }
             }
         });
@@ -306,8 +310,8 @@ function initDiagram(){
             [stRadius, stRadius], [stRadius, -stRadius]
         ]
     }).line({
-        color:0xFFFF00,
-        width: 5,
+        color:[100,0,100],
+        width: 1,
         visible: showLightCones,
         end: false
     })
