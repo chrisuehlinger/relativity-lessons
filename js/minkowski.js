@@ -19,7 +19,7 @@ var timeLimit = 100,
 
 var useRelativity = true,
     useLorentzBoost = true,
-    showLightCones = true;
+    showLightCones = false;
 
 var player = {
         absolutePosition: 0,
@@ -36,7 +36,7 @@ var player = {
         return {
             absolutePosition: pos,
             relativePosition: pos,
-            velocity: 0,
+            velocity: -0.5,
             color: [100, 0, 0],
             size: 4,
             reference: false
@@ -76,6 +76,24 @@ window.onkeydown = function (e) {
         case 39:
             thrustSign = 1;
             break;
+        case 76:
+            objects.push({
+                absolutePosition: objects[0].absolutePosition,
+                relativePosition: 0,
+                velocity: 1,
+                color: [100, 0, 100],
+                size: 4,
+                reference: false
+            });
+            objects.push({
+                absolutePosition: objects[0].absolutePosition,
+                relativePosition: 0,
+                velocity: -1,
+                color: [100, 0, 100],
+                size: 4,
+                reference: false
+            });
+            console.log('LIGHT!');
     }
 
     if(!timerStarted){
@@ -83,6 +101,7 @@ window.onkeydown = function (e) {
         initSimulation();
     }
 }
+
 
 window.onkeyup = function(){
     thrustSign = 0;
@@ -115,10 +134,14 @@ function initSimulation(){
 
         objects.map(function(object){
             if(!object.reference) {
-                var relativeVelocity = referenceFrame.velocity - object.velocity;
-                var lorentzBoost = useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
                 object.absolutePosition += object.velocity * timeSinceLastFrame;
-                object.relativePosition = lorentzBoost * (object.absolutePosition - referenceFrame.absolutePosition);
+                object.relativePosition = object.absolutePosition - referenceFrame.absolutePosition;
+
+                if (useLorentzBoost){
+                    var relativeVelocity = (referenceFrame.velocity - object.velocity) / (1 - referenceFrame.velocity*object.velocity);
+                    var relGamma = Math.sqrt(1 - relativeVelocity*relativeVelocity);
+                    object.relativePosition = relGamma ? relGamma * object.relativePosition : object.relativePosition;
+                }
             }
         });
         
@@ -172,7 +195,7 @@ function initSimulation(){
     }, timeLimit * 1000);
 }
 
-function initDiagram(numItems, numEvents){    
+function initDiagram(){    
     var view = mathbox
         .set({
             focus: 3,
@@ -201,24 +224,28 @@ function initDiagram(numItems, numEvents){
     })
     .array({
         id: 'currentPosition',
-        width: numItems,
+        width: 50,
         expr: function(emit, i, t){
-            emit(objects[i].relativePosition);
+            if(i < objects.length){
+                emit(objects[i].relativePosition);
+            }
         },
         channels: 1
     })
     .array({
         id:'objectColors',
-        width: numItems,
+        width: 50,
         channels: 4,
         expr: function(emit, i, t){
-            var color = objects[i].color;
-            emit(color[0], color[1], color[2], 1.0);
+            if(i < objects.length){
+                var color = objects[i].color;
+                emit(color[0], color[1], color[2], 1.0);
+            }
         },
     })
     .array({
         id:'objectSizes',
-        width: numItems,
+        width: 50,
         channels: 1,
         expr: function(emit, i, t){
             if(i < objects.length) {
@@ -236,36 +263,6 @@ function initDiagram(numItems, numEvents){
     .axis({
         axis: 2
     });
-    // .array({
-    //     id: 'trajectory',
-    //     width: 1,
-    //     items: numItems,
-    //     history: 580,
-    //     expr: function (emit, i, t) {
-    //         for(var j=0; j < objects.length; j++){
-    //             emit(objects[j].relativePosition);
-    //         }
-    //     },
-    //     channels: 1,
-    // },{
-    //     live: function(){
-    //         return !timerEnded;
-    //     }
-    // })
-    // .spread({
-    //     unit: 'relative',
-    //     alignHeight: 1,
-    //     height: [0, -10, 0],
-    // })
-    // .transpose({
-    //     order: 'yx'
-    // })
-    // .line({
-    //     // color: 0x3090FF,
-    //     colors:"#objectColors",
-    //     width: 5,
-    //     end:false
-    // });
 
     view.array({
         id: 'events',
