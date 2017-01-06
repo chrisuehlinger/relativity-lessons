@@ -26,31 +26,43 @@ var player = {
         relativePosition: 0,
         mass: 100,
         thrust: 10,
-        velocity: 0,
+        velocity: 0.5,
         color: [0,0, 255],
         size: 5,
         reference: useRelativity
     },
     others = lodash.fill(Array(1), 0).map(function(){
-        var pos = Math.random()*20 - 10;
+        var pos = 9;//aMath.random()*20 - 10;
         return {
             absolutePosition: pos,
             relativePosition: pos,
-            velocity: 0,
+            velocity: 0.5,
             color: [100, 0, 0],
             size: 4,
             reference: false
         };
     }),
+    hmm = -10,
     events = lodash.fill(Array(100), 0).map(function(){
         var pos = [Math.random()*40 - 20, Math.random()*60 - 10];
         return {
             absolutePosition: pos,
             relativePosition: pos,
+            velocity: 0,
             color: [0, 100, 0],
             size: 4
         };
-    }),
+    }).concat(lodash.fill(Array(100), 0).map(function(){
+        var pos = [0.5*hmm+4, hmm];
+        hmm++;
+        return {
+            absolutePosition: pos,
+            relativePosition: pos,
+            velocity: 0.5,
+            color: [0, 100, 0],
+            size: 4
+        };
+    })),
     objects = [player].concat(others),
     eventCount = events.length,
     objectCount = objects.length;
@@ -60,6 +72,10 @@ console.log(events)
 var present;
 
 initDiagram(objectCount, eventCount);
+setTimeout(function(){
+    timerStarted = true;
+    initSimulation();
+}, 1000);
 
 var thrustSign = 0;
 window.onkeydown = function (e) {
@@ -76,13 +92,32 @@ window.onkeydown = function (e) {
         case 39:
             thrustSign = 1;
             break;
+        case 76:
+            objects.push({
+                absolutePosition: objects[0].absolutePosition,
+                relativePosition: 0,
+                velocity: 1,
+                color: [100, 0, 100],
+                size: 4,
+                reference: false
+            });
+            objects.push({
+                absolutePosition: objects[0].absolutePosition,
+                relativePosition: 0,
+                velocity: -1,
+                color: [100, 0, 100],
+                size: 4,
+                reference: false
+            });
+            console.log('LIGHT!');
     }
 
-    if(!timerStarted){
-        timerStarted = true;
-        initSimulation();
-    }
+    // if(!timerStarted){
+    //     timerStarted = true;
+    //     initSimulation();
+    // }
 }
+
 
 window.onkeyup = function(){
     thrustSign = 0;
@@ -115,10 +150,14 @@ function initSimulation(){
 
         objects.map(function(object){
             if(!object.reference) {
-                var relativeVelocity = referenceFrame.velocity - object.velocity;
-                var lorentzBoost = useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
                 object.absolutePosition += object.velocity * timeSinceLastFrame;
-                object.relativePosition = lorentzBoost * (object.absolutePosition - referenceFrame.absolutePosition);
+                object.relativePosition = object.absolutePosition - referenceFrame.absolutePosition;
+
+                if (useLorentzBoost){
+                    var relativeVelocity = (referenceFrame.velocity - object.velocity) / (1 - referenceFrame.velocity*object.velocity);
+                    var relGamma = Math.sqrt(1 - relativeVelocity*relativeVelocity) || 1;
+                    object.relativePosition = relGamma * object.relativePosition;
+                }
             }
         });
         
@@ -157,6 +196,7 @@ function initSimulation(){
             events.push({
                 absolutePosition: [object.absolutePosition, timeElapsed],
                 relativePosition: [0,0],
+                velocity: 0,
                 color: object.color,
                 size: object.size
             });
@@ -172,7 +212,7 @@ function initSimulation(){
     }, timeLimit * 1000);
 }
 
-function initDiagram(numItems, numEvents){    
+function initDiagram(){    
     var view = mathbox
         .set({
             focus: 3,
@@ -201,24 +241,28 @@ function initDiagram(numItems, numEvents){
     })
     .array({
         id: 'currentPosition',
-        width: numItems,
+        width: 50,
         expr: function(emit, i, t){
-            emit(objects[i].relativePosition);
+            if(i < objects.length){
+                emit(objects[i].relativePosition);
+            }
         },
         channels: 1
     })
     .array({
         id:'objectColors',
-        width: numItems,
+        width: 50,
         channels: 4,
         expr: function(emit, i, t){
-            var color = objects[i].color;
-            emit(color[0], color[1], color[2], 1.0);
+            if(i < objects.length){
+                var color = objects[i].color;
+                emit(color[0], color[1], color[2], 1.0);
+            }
         },
     })
     .array({
         id:'objectSizes',
-        width: numItems,
+        width: 50,
         channels: 1,
         expr: function(emit, i, t){
             if(i < objects.length) {
@@ -236,36 +280,6 @@ function initDiagram(numItems, numEvents){
     .axis({
         axis: 2
     });
-    // .array({
-    //     id: 'trajectory',
-    //     width: 1,
-    //     items: numItems,
-    //     history: 580,
-    //     expr: function (emit, i, t) {
-    //         for(var j=0; j < objects.length; j++){
-    //             emit(objects[j].relativePosition);
-    //         }
-    //     },
-    //     channels: 1,
-    // },{
-    //     live: function(){
-    //         return !timerEnded;
-    //     }
-    // })
-    // .spread({
-    //     unit: 'relative',
-    //     alignHeight: 1,
-    //     height: [0, -10, 0],
-    // })
-    // .transpose({
-    //     order: 'yx'
-    // })
-    // .line({
-    //     // color: 0x3090FF,
-    //     colors:"#objectColors",
-    //     width: 5,
-    //     end:false
-    // });
 
     view.array({
         id: 'events',
@@ -309,8 +323,8 @@ function initDiagram(numItems, numEvents){
             [stRadius, stRadius], [stRadius, -stRadius]
         ]
     }).line({
-        color:0xFFFF00,
-        width: 5,
+        color:[100,0,100],
+        width: 1,
         visible: showLightCones,
         end: false
     })
