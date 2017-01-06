@@ -12,7 +12,7 @@ three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 var timeLimit = 100,
-    stRadius = 20,
+    stRadius = 10,
     timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
@@ -37,7 +37,7 @@ var player = {
         return {
             absolutePosition: pos,
             relativePosition: pos,
-            velocity: -0.5,
+            velocity: 0,
             color: [100, 0, 0],
             size: 4,
             reference: false
@@ -53,7 +53,7 @@ var player = {
             color: [0, 100, 0],
             size: 4
         };
-    }).concat(lodash.fill(Array(100), 0).map(function () {
+    }).concat(lodash.fill(Array(0), 0).map(function () {
         var pos = [0.5 * hmm + 4, hmm];
         hmm++;
         return {
@@ -65,9 +65,9 @@ var player = {
         };
     })),
     blackHole = {
-        absolutePosition: -15,
-        relativePosition: -15,
-        radius: 5,
+        absolutePosition: 8,
+        relativePosition: 8,
+        radius: 2,
         color: [0, 0, 0],
         size: 4
     },
@@ -164,14 +164,20 @@ function initSimulation() {
 
         objects.map(function (object) {
             if (!object.reference) {
-                var t = 1;
+                var v = object.velocity;
                 if (useBlackHoles) {
                     // Calculated using Gullstrand-Painlevé coordinates
                     var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
-                    t = 1 - Math.sqrt(blackHole.radius/r);
+                    var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
+                    var t = r > 0 ? sign*Math.sqrt(blackHole.radius / r) : 0;
+        v = (v + 1)*(1-t/2) - 1;
+                    console.log(sign, lodash.round(t,3), lodash.round(v,3));
+                    if (r < 0.1) {
+                        objects.splice(objects.indexOf(object), 1);
+                    }
                 }
 
-                object.absolutePosition += object.velocity * timeSinceLastFrame * t;
+                object.absolutePosition += v * timeSinceLastFrame;
                 object.relativePosition = object.absolutePosition - referenceFrame.absolutePosition;
 
                 if (useLorentzBoost) {
