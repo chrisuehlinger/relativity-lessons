@@ -42,6 +42,7 @@ var player = {
             reference: false
         };
     }),
+    hmm = -10,
     events = lodash.fill(Array(100), 0).map(function(){
         var pos = [Math.random()*40 - 20, Math.random()*60 - 10];
         return {
@@ -51,7 +52,17 @@ var player = {
             color: [0, 100, 0],
             size: 4
         };
-    }),
+    }).concat(lodash.fill(Array(100), 0).map(function(){
+        var pos = [0.5*hmm+4, hmm];
+        hmm++;
+        return {
+            absolutePosition: pos,
+            relativePosition: pos,
+            velocity: 0.5,
+            color: [0, 100, 0],
+            size: 4
+        };
+    })),
     objects = [player].concat(others),
     eventCount = events.length,
     objectCount = objects.length;
