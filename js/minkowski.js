@@ -18,7 +18,7 @@ var timeLimit = 100,
     timeElapsed = 0;
 
 var useRelativity = true,
-    useLorentzBoost = false,
+    useLorentzBoost = true,
     useBlackHoles = true,
     showLightCones = true;
 
@@ -43,8 +43,29 @@ var player = {
             reference: false
         };
     }),
+    blackHole = {
+        absolutePosition: -8,
+        relativePosition: -8,
+        radius: 1,
+        color: [0, 0, 0],
+        size: 4
+    },
+    blackHoles = [blackHole],
+    bhmm = -10
+    blackHoleEvents = lodash.fill(Array(200), 0).map(function (zero, i) {
+        var sign = Math.pow(-1,i);
+        var pos = [blackHole.absolutePosition + sign*blackHole.radius, bhmm];
+        if(sign < 0) bhmm++;
+        return {
+            absolutePosition: pos,
+            relativePosition: pos,
+            velocity: 0,
+            color: [0, 0, 0],
+            size: 4
+        };
+    }),
     hmm = -10,
-    events = lodash.fill(Array(0), 0).map(function () {
+    events = lodash.fill(Array(100), 0).map(function () {
         var pos = [Math.random() * 40 - 20, Math.random() * 60 - 10];
         return {
             absolutePosition: pos,
@@ -53,7 +74,7 @@ var player = {
             color: [0, 100, 0],
             size: 4
         };
-    }).concat(lodash.fill(Array(0), 0).map(function () {
+    }).concat(lodash.fill(Array(100), 0).map(function () {
         var pos = [0.5 * hmm + 4, hmm];
         hmm++;
         return {
@@ -63,15 +84,7 @@ var player = {
             color: [0, 100, 0],
             size: 4
         };
-    })),
-    blackHole = {
-        absolutePosition: 8,
-        relativePosition: 8,
-        radius: 2,
-        color: [0, 0, 0],
-        size: 4
-    },
-    blackHoles = [blackHole],
+    })).concat(blackHoleEvents),
     objects = [player].concat(others),
     eventCount = events.length,
     objectCount = objects.length;
@@ -155,7 +168,7 @@ function initSimulation() {
 
         referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
 
-        // console.log('Y = ' + Math.round(gamma*1000)/1000 + ' x = ' + Math.round(referenceFrame.absolutePosition*1000)/1000 + ' v = ' + Math.round(referenceFrame.velocity*1000)/1000 + 'c');
+        console.log('x = ' + lodash.round(referenceFrame.absolutePosition, 3) + ' v = ' + lodash.round(referenceFrame.velocity, 3) + 'c');
 
 
         blackHoles.map(function (object) {
@@ -170,7 +183,7 @@ function initSimulation() {
                     var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
                     var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
                     var t = r > 0 ? sign*Math.sqrt(blackHole.radius / r) : 0;
-        v = (v + 1)*(1-t/2) - 1;
+                    v = (v + 1)*(1-t/2) - 1;
                     console.log(sign, lodash.round(t,3), lodash.round(v,3));
                     if (r < 0.1) {
                         objects.splice(objects.indexOf(object), 1);
