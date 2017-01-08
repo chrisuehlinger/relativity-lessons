@@ -11,6 +11,7 @@ three = mathbox.three;
 three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
+
 var timeLimit = 100,
     stRadius = 10,
     timerStarted = false,
@@ -21,6 +22,7 @@ var useRelativity = true,
     useLorentzBoost = true,
     useBlackHoles = true,
     showLightCones = true;
+
 
 var player = {
     absolutePosition: 0,
@@ -91,9 +93,8 @@ var player = {
     eventCount = events.length,
     objectCount = objects.length;
 
-console.log(events)
 
-var present;
+var gui = new dat.GUI();
 
 initDiagram(objectCount, eventCount);
 setTimeout(function () {

@@ -17,6 +17,7 @@
   "dependencies": {
     "mathbox": "^0.0.5",
     "jquery": "^3.1.1",
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "dat.gui": "dat-gui#^0.6.2"
   }
 }
