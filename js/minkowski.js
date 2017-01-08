@@ -109,6 +109,8 @@ var player = {
     objectCount = objects.length;
 
 
+gui.add(player, 'velocity', -1, 1).listen();
+
 
 initDiagram(objectCount, eventCount);
 setTimeout(function () {
