@@ -44,8 +44,8 @@ var player = {
         };
     }),
     blackHole = {
-        absolutePosition: -10,
-        relativePosition: -10,
+        absolutePosition: 25,
+        relativePosition: 25,
         velocity: 0,
         radius: 5,
         color: [0, 0, 0],
@@ -67,7 +67,7 @@ var player = {
     }),
     hmm = -10,
     events = lodash.fill(Array(100), 0).map(function () {
-        var pos = [Math.random() * 40 - 20, Math.random() * 60 - 10];
+        var pos = [-Math.random() * 10, Math.random() * 100 - 10];
         return {
             absolutePosition: pos,
             relativePosition: pos,
@@ -75,7 +75,7 @@ var player = {
             color: [0, 100, 0],
             size: 4
         };
-    }).concat(lodash.fill(Array(100), 0).map(function () {
+    }).concat(lodash.fill(Array(0), 0).map(function () {
         var pos = [0.5 * hmm + 4, hmm];
         hmm++;
         return {
@@ -216,11 +216,20 @@ function initSimulation() {
             }
         });
 
-        events.map(function (event) {
+        events.map(function (event, i) {
+            var v = 0;
+            if (useBlackHoles) {
+                // Calculated using Gullstrand-Painlevé coordinates
+                var r = Math.abs(blackHole.absolutePosition - referenceFrame.absolutePosition);
+                var sign = Math.sign(blackHole.absolutePosition - referenceFrame.absolutePosition);
+                var t = r > 0 ? sign*Math.sqrt(blackHole.radius / r) : 0;
+                v = (1-t)-1;
+                i === 50 && console.log(sign, lodash.round(t,3), lodash.round(v,3));
+            }
 
             // Galillean Relativity
             event.relativePosition = [
-                event.absolutePosition[0] - referenceFrame.absolutePosition,
+                event.absolutePosition[0] + v*(event.absolutePosition[1] - timeElapsed) - referenceFrame.absolutePosition,
                 event.absolutePosition[1] - timeElapsed
             ];
 
@@ -241,10 +250,11 @@ function initSimulation() {
                 var r = Math.abs(blackHole.absolutePosition - referenceFrame.absolutePosition);
                 var sign = Math.sign(blackHole.absolutePosition - referenceFrame.absolutePosition);
                 var t = r > 0 ? sign*Math.sqrt(blackHole.radius / r) : 0;
-                v = (v + 1)*(1-t) - 1;
-                i === 50 && console.log(sign, lodash.round(t,3), lodash.round(v,3));
+                v = (1-t) - 1;
+                // i === 50 && console.log(sign, lodash.round(t,3), lodash.round(v,3));
             }
             event.absolutePosition[0] += v*(timeSinceLastFrame);
+
             // Galillean Relativity
             event.relativePosition = [
                 event.absolutePosition[0] + v*(event.absolutePosition[1] - timeElapsed) - referenceFrame.absolutePosition,
