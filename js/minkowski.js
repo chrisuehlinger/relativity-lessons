@@ -12,17 +12,32 @@ three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 
-var timeLimit = 100,
-    stRadius = 10,
-    timerStarted = false,
+var options = {
+    timeLimit: 100,
+    timeFactor: 1,
+    updatesPerSecond: 2,
+    stRadius: 10,
+    useRelativity: true,
+    useLorentzBoost: true,
+    useBlackHoles: true,
+    showLightCones: true
+};
+
+var gui = new dat.GUI();
+gui.add(options, 'timeLimit', 0, 1000);
+gui.add(options, 'timeFactor', 0, 2);
+gui.add(options, 'updatesPerSecond', 0, 5);
+// gui.add(options, 'stRadius', 0, 100);
+gui.add(options, 'useRelativity').onChange(function(useRelativity){
+    player.reference = useRelativity;
+});
+gui.add(options, 'useLorentzBoost');
+gui.add(options, 'useBlackHoles');
+gui.add(options, 'showLightCones');
+
+var timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
-
-var useRelativity = true,
-    useLorentzBoost = true,
-    useBlackHoles = true,
-    showLightCones = true;
-
 
 var player = {
     absolutePosition: 0,
@@ -32,7 +47,7 @@ var player = {
     velocity: 0,
     color: [0, 0, 255],
     size: 5,
-    reference: useRelativity
+    reference: options.useRelativity
 },
     others = lodash.fill(Array(0), 0).map(function () {
         var pos = -1;//aMath.random()*20 - 10;
@@ -94,7 +109,6 @@ var player = {
     objectCount = objects.length;
 
 
-var gui = new dat.GUI();
 
 initDiagram(objectCount, eventCount);
 setTimeout(function () {
@@ -152,8 +166,8 @@ function initSimulation() {
     var lastFrameTime = startTime = Date.now();
     var updateFrame = setTimeout(update, 50);
     function update() {
-        var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
-        timeElapsed = (Date.now() - startTime) / 1000;
+        var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
+        timeElapsed += timeSinceLastFrame;
         lastFrameTime = Date.now();
 
         var referenceFrame = objects.filter(function (obj) { return obj.reference; })[0] || {
@@ -176,7 +190,7 @@ function initSimulation() {
 
         blackHoles.map(function (object) {
             var v = object.velocity;
-            if (useBlackHoles) {
+            if (options.useBlackHoles) {
                 // Calculated using Gullstrand-Painlevé coordinates
                 var r = Math.abs(object.absolutePosition - referenceFrame.absolutePosition);
                 var sign = Math.sign(object.absolutePosition - referenceFrame.absolutePosition);
@@ -192,7 +206,7 @@ function initSimulation() {
         objects.map(function (object) {
             if (!object.reference) {
                 var v = object.velocity;
-                if (useBlackHoles) {
+                if (options.useBlackHoles) {
                     // Calculated using Gullstrand-Painlevé coordinates
                     var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
                     var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
@@ -207,7 +221,7 @@ function initSimulation() {
                 object.absolutePosition += v * timeSinceLastFrame;
                 object.relativePosition = object.absolutePosition - referenceFrame.absolutePosition;
 
-                if (useLorentzBoost) {
+                if (options.useLorentzBoost) {
                     var relativeVelocity = (referenceFrame.velocity - object.velocity) / (1 - referenceFrame.velocity * object.velocity);
                     var relGamma = Math.sqrt(1 - relativeVelocity * relativeVelocity) || 1;
                     object.relativePosition = relGamma * object.relativePosition;
@@ -219,7 +233,7 @@ function initSimulation() {
 
         events.map(function (event, i) {
             var v = 0;
-            if (useBlackHoles) {
+            if (options.useBlackHoles) {
                 // Calculated using Gullstrand-Painlevé coordinates
                 var r = Math.abs(blackHole.absolutePosition - referenceFrame.absolutePosition);
                 var sign = Math.sign(blackHole.absolutePosition - referenceFrame.absolutePosition);
@@ -235,7 +249,7 @@ function initSimulation() {
             ];
 
             // Special Relativity
-            if (useLorentzBoost) {
+            if (options.useLorentzBoost) {
                 event.relativePosition = [
                     gamma * (event.relativePosition[0] - referenceFrame.velocity * event.relativePosition[1]),
                     gamma * (event.relativePosition[1] - referenceFrame.velocity * event.relativePosition[0])
@@ -246,7 +260,7 @@ function initSimulation() {
 
         blackHoleEvents.map(function (event, i) {
             var v = 0;
-            if (useBlackHoles) {
+            if (options.useBlackHoles) {
                 // Calculated using Gullstrand-Painlevé coordinates
                 var r = Math.abs(blackHole.absolutePosition - referenceFrame.absolutePosition);
                 var sign = Math.sign(blackHole.absolutePosition - referenceFrame.absolutePosition);
@@ -263,7 +277,7 @@ function initSimulation() {
             ];
 
             // Special Relativity
-            if (useLorentzBoost) {
+            if (options.useLorentzBoost) {
                 event.relativePosition = [
                     gamma * (event.relativePosition[0] - referenceFrame.velocity * event.relativePosition[1]),
                     gamma * (event.relativePosition[1] - referenceFrame.velocity * event.relativePosition[0])
@@ -279,8 +293,11 @@ function initSimulation() {
         updateFrame = setTimeout(update, 50);
     }
 
-    setInterval(function () {
-        timeElapsed = (Date.now() - startTime) / 1000;
+    updateEvents();
+
+    function updateEvents () {
+        var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
+        timeElapsed += timeSinceLastFrame;
         var pos = [Math.random() * 20 - 10, Math.random() * 10];
         // events.push({
         //     absolutePosition: pos,
@@ -301,13 +318,14 @@ function initSimulation() {
         });
 
         update();
-    }, 500);
+        setTimeout(updateEvents, (1/options.updatesPerSecond)*1000);
+    }
 
     setTimeout(function () {
         console.log('ADVANCE');
         clearTimeout(updateFrame);
         timerEnded = true;
-    }, timeLimit * 1000);
+    }, options.timeLimit * 1000);
 }
 
 function initDiagram() {
@@ -330,7 +348,7 @@ function initDiagram() {
             focus: 3,
         })
         .cartesian({
-            range: [[-stRadius, stRadius], [-stRadius, stRadius], [-10, 10]],
+            range: [[-options.stRadius, options.stRadius], [-options.stRadius, options.stRadius], [-10, 10]],
             scale: [1.5, 1.5, 1.5],
         });
     view
@@ -352,13 +370,17 @@ function initDiagram() {
             detail: 64
         })
         .grid({
-            divideX: 4 * stRadius,
+            divideX: 4 * options.stRadius,
             detailX: 128,
-            divideY: 4 * stRadius,
+            divideY: 4 * options.stRadius,
             detailY: 128,
             width: 1,
             opacity: 0.5,
             zBias: -5,
+        }, {
+            divideX: function(){
+                return options.stRadius;
+            }
         })
         .end()
         .array({
@@ -406,8 +428,8 @@ function initDiagram() {
         width: 1e4,
         expr: function (emit, i, t) {
             if (i < events.length &&
-                Math.abs(events[i].relativePosition[0]) < stRadius &&
-                Math.abs(events[i].relativePosition[1]) < stRadius) {
+                Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                Math.abs(events[i].relativePosition[1]) < options.stRadius) {
                 emit(events[i].relativePosition[0], events[i].relativePosition[1]);
             }
         }
@@ -418,8 +440,8 @@ function initDiagram() {
         expr: function (emit, i, t) {
             if (i < events.length) {
                 if (i < events.length &&
-                    Math.abs(events[i].relativePosition[0]) < stRadius &&
-                    Math.abs(events[i].relativePosition[1]) < stRadius) {
+                    Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                    Math.abs(events[i].relativePosition[1]) < options.stRadius) {
                     var color = events[i].color;
                     emit(color[0], color[1], color[2], 1.0);
                 }
@@ -441,8 +463,8 @@ function initDiagram() {
         width: 10,
         expr: function (emit, i, t) {
             if (i < blackHoles.length) {
-                // Math.abs(events[i].relativePosition[0]) < stRadius &&
-                // Math.abs(events[i].relativePosition[1]) < stRadius) {
+                // Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                // Math.abs(events[i].relativePosition[1]) < options.stRadius) {
                 emit(blackHoles[i].relativePosition);
                 emit(blackHoles[i].relativePosition - blackHoles[i].radius);
                 emit(blackHoles[i].relativePosition + blackHoles[i].radius);
@@ -460,14 +482,17 @@ function initDiagram() {
         channels: 2,
         live: false,
         data: [
-            [-stRadius, -stRadius], [-stRadius, stRadius],
-            [stRadius, stRadius], [stRadius, -stRadius]
+            [-options.stRadius, -options.stRadius], [-options.stRadius, options.stRadius],
+            [options.stRadius, options.stRadius], [options.stRadius, -options.stRadius]
         ]
     }).line({
         color: [100, 0, 100],
         width: 1,
-        visible: showLightCones,
         end: false
+    }, {
+        visible: function(){
+            return options.showLightCones;
+        }
     })
 
 }
