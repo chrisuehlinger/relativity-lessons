@@ -44,10 +44,10 @@ var player = {
         };
     }),
     blackHole = {
-        absolutePosition: 25,
-        relativePosition: 25,
+        absolutePosition: -25,
+        relativePosition: -25,
         velocity: 0,
-        radius: 5,
+        radius: 2,
         color: [0, 0, 0],
         size: 4
     },
@@ -67,7 +67,7 @@ var player = {
     }),
     hmm = -10,
     events = lodash.fill(Array(100), 0).map(function () {
-        var pos = [-Math.random() * 10, Math.random() * 100 - 10];
+        var pos = [Math.random() * 10, Math.random() * 100 - 10];
         return {
             absolutePosition: pos,
             relativePosition: pos,
@@ -311,15 +311,17 @@ function initSimulation() {
 
 function initDiagram() {
     var warpShader = mathbox.shader({
-      code: '#vertex-warp',
+      code: '#blackhole-curvature',
     }, {
       time: function (t) { return t / 4; },
-      intensity: function (t) {
-        t = t / 4;
-        intensity = .5 + .5 * Math.cos(t / 3);
-        intensity = 1.0 - Math.pow(intensity, 4);
-        return intensity;
-      }
+      singularity: function (t) {
+        //   console.log(blackHole.relativePosition);
+        return blackHole.relativePosition;
+      },
+      rS: function (t) {
+        return blackHole.radius;
+      },
+
     });
 
     var view = mathbox
@@ -331,9 +333,6 @@ function initDiagram() {
             scale: [1.5, 1.5, 1.5],
         });
     view
-        .axis({
-            detail: 1,
-        })
         .scale({
             divide: 1,
         })
@@ -344,10 +343,17 @@ function initDiagram() {
         .vertex({
             pass:'data'
         })
+        .axis({
+            detail: 64,
+        })
+        .axis({
+            axis: 2,
+            detail: 64
+        })
         .grid({
-            divideX: 2 * stRadius,
+            divideX: 4 * stRadius,
             detailX: 128,
-            divideY: 2 * stRadius,
+            divideY: 4 * stRadius,
             detailY: 128,
             width: 1,
             opacity: 0.5,
@@ -391,9 +397,6 @@ function initDiagram() {
             colors: '#objectColors',
             // size: 10
             sizes: "#objectSizes"
-        })
-        .axis({
-            axis: 2
         });
 
     view.array({
