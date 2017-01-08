@@ -218,8 +218,8 @@ function initDiagram(){
             focus: 3,
         })
         .cartesian({
-            range: [[-stRadius, stRadius], [-stRadius, stRadius], [0, 0]],
-            scale: [2, 2, 2],
+            range: [[-stRadius, stRadius], [-stRadius, stRadius], [-10, 10]],
+            scale: [1.5, 1.5, 1.5],
         });
     view
     .axis({
