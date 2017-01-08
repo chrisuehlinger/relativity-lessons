@@ -5,6 +5,44 @@
         <link rel="stylesheet" href="bower_components/mathbox/build/mathbox.css" />
     </head>
     <body>
+        <script type="application/glsl" id="vertex-warp">
+        uniform float time;
+        uniform float intensity;
+
+        vec4 warpVertex(vec4 xyzw, inout vec4 stpq) {
+            // xyzw +=   0.2 * intensity * (sin(xyzw.yzwx * 1.91 + time + sin(xyzw.wxyz * 1.74 + time)));
+            // xyzw +=   0.1 * intensity * (sin(xyzw.yzwx * 4.03 + time + sin(xyzw.wxyz * 2.74 + time)));
+            // xyzw +=  0.05 * intensity * (sin(xyzw.yzwx * 8.39 + time + sin(xyzw.wxyz * 4.18 + time)));
+            // xyzw += 0.025 * intensity * (sin(xyzw.yzwx * 15.1 + time + sin(xyzw.wxyz * 9.18 + time)));
+
+            
+            return xyzw;
+        }
+        </script>
+        <script type="application/glsl" id="blackhole-curvature">
+        uniform float time;
+        uniform float singularity;
+        uniform float rS;
+
+        vec4 warpVertex(vec4 xyzw, inout vec4 stpq) {
+            float pi = 3.14159268;
+            float theta = clamp(pi*xyzw.y/xyzw.x,-pi, pi);
+            float r = abs(xyzw.x - singularity);
+            float dir = sign(xyzw.x - singularity);
+
+            // xyzw.x = singularity-dir*r*cos(theta);
+            // xyzw.y = r*sin(theta);
+
+
+
+            // float a = 2.0*sqrt(rS*(r - rS));
+            // xyzw.x -= 0.5*dir*a*xyzw.y*xyzw.y;
+            // xyzw.x -= dir*sqrt(rS*xyzw.y);
+            // xyzw.x *= 1.0/abs(singularity);//1.0-sqrt(rS/r);
+            // xyzw.y = xyzw.x*xyzw.x;
+            return xyzw;
+        }
+        </script>
         <script>(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';document.head.appendChild(script);})()</script>
         <script src="bower_components/mathbox/build/mathbox-bundle.js"></script>
         <script src="bower_components/lodash/lodash.js"></script>

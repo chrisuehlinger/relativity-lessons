@@ -224,7 +224,7 @@ function initSimulation() {
                 var sign = Math.sign(blackHole.absolutePosition - referenceFrame.absolutePosition);
                 var t = r > 0 ? sign*Math.sqrt(blackHole.radius / r) : 0;
                 v = (1-t)-1;
-                i === 50 && console.log(sign, lodash.round(t,3), lodash.round(v,3));
+                // i === 50 && console.log(sign, lodash.round(t,3), lodash.round(v,3));
             }
 
             // Galillean Relativity
@@ -310,6 +310,18 @@ function initSimulation() {
 }
 
 function initDiagram() {
+    var warpShader = mathbox.shader({
+      code: '#vertex-warp',
+    }, {
+      time: function (t) { return t / 4; },
+      intensity: function (t) {
+        t = t / 4;
+        intensity = .5 + .5 * Math.cos(t / 3);
+        intensity = 1.0 - Math.pow(intensity, 4);
+        return intensity;
+      }
+    });
+
     var view = mathbox
         .set({
             focus: 3,
@@ -329,13 +341,19 @@ function initDiagram() {
             classes: ['foo', 'bar'],
             width: 2
         })
+        .vertex({
+            pass:'data'
+        })
         .grid({
             divideX: 2 * stRadius,
+            detailX: 128,
             divideY: 2 * stRadius,
+            detailY: 128,
             width: 1,
             opacity: 0.5,
             zBias: -5,
         })
+        .end()
         .array({
             id: 'currentPosition',
             width: 50,
