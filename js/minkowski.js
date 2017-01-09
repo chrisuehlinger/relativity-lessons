@@ -382,10 +382,6 @@ function initDiagram() {
             width: 1,
             opacity: 0.5,
             zBias: -5,
-        }, {
-            divideX: function(){
-                return options.stRadius;
-            }
         })
         .end()
         .array({
