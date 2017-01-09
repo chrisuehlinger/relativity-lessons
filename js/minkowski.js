@@ -179,10 +179,11 @@ function initSimulation() {
             mass: 1
         }
 
-        var gamma = Math.sqrt(1 - referenceFrame.velocity * referenceFrame.velocity);
-        var relThrust = referenceFrame.thrust / (gamma * referenceFrame.mass);
-        referenceFrame.velocity += thrustSign * relThrust * timeSinceLastFrame;
-        referenceFrame.velocity = Math.max(Math.min(referenceFrame.velocity, 0.99999), -0.99999);
+        var gamma = Math.sqrt(1 - player.velocity * player.velocity);
+        var relThrust = player.thrust / (gamma * player.mass);
+        player.velocity += thrustSign * relThrust * timeSinceLastFrame;
+        player.velocity = Math.max(Math.min(player.velocity, 0.99999), -0.99999);
+        
         gamma = Math.sqrt(1 - referenceFrame.velocity * referenceFrame.velocity);
 
         referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
