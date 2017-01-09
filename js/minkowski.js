@@ -19,7 +19,7 @@ var options = {
     stRadius: 10,
     useRelativity: true,
     useLorentzBoost: true,
-    useBlackHoles: true,
+    useBlackHoles: false,
     showLightCones: true
 };
 
@@ -183,7 +183,7 @@ function initSimulation() {
         var relThrust = player.thrust / (gamma * player.mass);
         player.velocity += thrustSign * relThrust * timeSinceLastFrame;
         player.velocity = Math.max(Math.min(player.velocity, 0.99999), -0.99999);
-        
+
         gamma = Math.sqrt(1 - referenceFrame.velocity * referenceFrame.velocity);
 
         referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
@@ -335,7 +335,9 @@ function initDiagram() {
     var warpShader = mathbox.shader({
       code: '#blackhole-curvature',
     }, {
-      time: function (t) { return t / 4; },
+      useBlackHoles: function () {
+          return options.useBlackHoles ? 1 : 0; 
+        },
       singularity: function (t) {
         //   console.log(blackHole.relativePosition);
         return blackHole.relativePosition;
