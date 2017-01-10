@@ -59,7 +59,7 @@ _.noConflict();
         size: 5,
         reference: options.useRelativity
     },
-        others = _.fill(Array(0), 0).map(function () {
+        others = _.fill(Array(1), 0).map(function () {
             var pos = [Math.random() * 20 - 10, Math.random() * 20 - 10];
             return {
                 absolutePosition: pos,
@@ -165,7 +165,7 @@ _.noConflict();
             }
             gamma = Math.sqrt(1 - beta * beta);
 
-            $vDisplay.text('v = ' + _.round(beta, 3) + 'c');
+            $vDisplay.text('v = ' + _.round(beta, 3) + 'c (' + _.round(referenceFrame.velocity[0],3) + ', ' + _.round(referenceFrame.velocity[1],3) + ')');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition[0], 3) + ' y = ' + _.round(referenceFrame.absolutePosition[1], 3));
 
 
