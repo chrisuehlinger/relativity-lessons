@@ -138,6 +138,10 @@ _.noConflict();
             return;
         }
 
+        if(e.keyCode >= 48 && e.keyCode < 59) {
+            changeFrame(e.keyCode-48);
+        }
+
         switch (e.keyCode) {
             case 65:
             case 37:
@@ -178,6 +182,11 @@ _.noConflict();
         thrustSign = 0;
     }
 
+    function changeFrame(index){
+        objects.map(function(object) { object.reference = false; });
+        objects[index].reference = true;
+    }
+
     function initSimulation() {
         var lastFrameTime = startTime = Date.now();
         var updateFrame = requestAnimationFrame(update);
@@ -207,6 +216,7 @@ _.noConflict();
             gamma = Math.sqrt(1 - referenceFrame.velocity * referenceFrame.velocity);
 
             referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
+            referenceFrame.relativePosition = 0;
             referenceFrame.properTime += timeSinceLastFrame;
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
