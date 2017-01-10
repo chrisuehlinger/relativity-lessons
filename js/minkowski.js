@@ -502,10 +502,10 @@ _.noConflict();
             width: 1,
             end: false
         }, {
-                visible: function () {
-                    return options.showLightCones;
-                }
-            })
+            visible: function () {
+                return options.showLightCones;
+            }
+        });
     }
 } (lodash);
 
