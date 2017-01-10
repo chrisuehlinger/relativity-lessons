@@ -1,0 +1,6 @@
+.info-display {
+    display: inline-block;
+    position: fixed;
+    bottom: 5px;
+    left: 5px;
+}

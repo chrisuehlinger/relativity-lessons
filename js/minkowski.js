@@ -178,6 +178,12 @@ _.noConflict();
     function initSimulation() {
         var lastFrameTime = startTime = Date.now();
         var updateFrame = requestAnimationFrame(update);
+
+        var $vDisplay = $('<div></div>');
+        var $xDisplay = $('<div></div>');
+        var $display = $('<div class="info-display"></div>').append($vDisplay).append($xDisplay);
+        $('body').append($display);
+        
         function update() {
             var timeSinceLastFrame = options.timeFactor * (Date.now() - lastFrameTime) / 1000;
             timeElapsed += timeSinceLastFrame;
@@ -199,8 +205,8 @@ _.noConflict();
 
             referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
 
-            // console.log('x = ' + _.round(referenceFrame.absolutePosition, 3) + ' v = ' + _.round(referenceFrame.velocity, 3) + 'c');
-
+            $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
+            $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
 
             blackHoles.map(function (object) {
                 var v = object.velocity;
