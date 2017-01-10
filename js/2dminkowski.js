@@ -22,15 +22,32 @@ _.noConflict();
     three.camera.position.set(0, 0, 3);
     three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
-    var stRadius = 10,
-        timeLimit = 100,
-        timerStarted = false,
+    var options = {
+        timeLimit: 100,
+        timeFactor: 1,
+        updatesPerSecond: 2,
+        stRadius: 10,
+        useRelativity: true,
+        useLorentzBoost: true,
+        useBlackHoles: true,
+        showLightCones: true
+    };
+
+    var gui = new dat.GUI();
+    gui.add(options, 'timeLimit', 0, 1000);
+    gui.add(options, 'timeFactor', 0, 2);
+    gui.add(options, 'updatesPerSecond', 0, 5);
+    // gui.add(options, 'stRadius', 0, 100);
+    gui.add(options, 'useRelativity').onChange(function (useRelativity) {
+        player.reference = useRelativity;
+    });
+    gui.add(options, 'useLorentzBoost');
+    gui.add(options, 'useBlackHoles');
+    gui.add(options, 'showLightCones');
+
+    var timerStarted = false,
         timerEnded = false,
         timeElapsed = 0;
-
-    var useRelativity = true,
-        useLorentzBoost = true,
-        showLightCones = true;
 
     var player = {
         absolutePosition: [0, 0],
@@ -40,7 +57,7 @@ _.noConflict();
         velocity: [0, 0],
         color: [0, 0, 255],
         size: 5,
-        reference: useRelativity
+        reference: options.useRelativity
     },
         others = _.fill(Array(0), 0).map(function () {
             var pos = [Math.random() * 20 - 10, Math.random() * 20 - 10];
@@ -105,8 +122,8 @@ _.noConflict();
         var lastFrameTime = startTime = Date.now();
         var updateFrame = setTimeout(update, 50);
         function update() {
-            var timeSinceLastFrame = (Date.now() - lastFrameTime) / 1000;
-            timeElapsed = (Date.now() - startTime) / 1000;
+            var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
+            timeElapsed += timeSinceLastFrame;
             lastFrameTime = Date.now();
 
             var referenceFrame = objects.filter(function (obj) { return obj.reference; })[0] || {
@@ -153,7 +170,7 @@ _.noConflict();
             //         // var relativeVelocityX = referenceFrame.velocity[0] - object.velocity[0],
             //         //     relativeVelocityY = referenceFrame.velocity[1] - object.velocity[1],
             //         //     relativeVelocity = Math.sqrt(relativeVelocityX*relativeVelocityX + relativeVelocityY*relativeVelocityY);
-            //         // var lorentzBoost = useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
+            //         // var lorentzBoost = options.useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
             //         object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
             //         object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
             //         // object.relativePosition = [
@@ -169,7 +186,7 @@ _.noConflict();
                     event.absolutePosition[1] - referenceFrame.absolutePosition[1],
                     event.absolutePosition[2] - timeElapsed
                 ];
-                if (useLorentzBoost) {
+                if (options.useLorentzBoost) {
                     var x = event.relativePosition[0],
                         y = event.relativePosition[1],
                         t = event.relativePosition[2]
@@ -185,8 +202,13 @@ _.noConflict();
             updateFrame = setTimeout(update, 50);
         }
 
-        setInterval(function () {
-            timeElapsed = (Date.now() - startTime) / 1000;
+
+        setTimeout(updateEvents, (1/options.updatesPerSecond) * 1000);
+        function updateEvents() {
+            var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
+            timeElapsed += timeSinceLastFrame;
+            lastFrameTime = Date.now();
+
             objects.map(function (object) {
                 events.push({
                     absolutePosition: [object.absolutePosition[0], object.absolutePosition[1], timeElapsed],
@@ -197,13 +219,14 @@ _.noConflict();
             });
 
             update();
-        }, 1000);
+            setTimeout(updateEvents, (1/options.updatesPerSecond) * 1000);
+        }
 
         // setTimeout(function () {
         //     console.log('ADVANCE');
         //     clearTimeout(updateFrame);
         //     timerEnded = true;
-        // }, timeLimit * 1000);
+        // }, options.timeLimit * 1000);
     }
 
     function initDiagram(numItems) {
@@ -212,15 +235,11 @@ _.noConflict();
                 focus: 3,
             })
             .cartesian({
-                range: [[-stRadius, stRadius], [-stRadius, stRadius], [-stRadius, stRadius]],
+                range: [[-options.stRadius, options.stRadius], [-options.stRadius, options.stRadius], [-options.stRadius, options.stRadius]],
                 scale: [1, 1, 1],
             });
 
         view
-            .transform({
-                position: [0, 0, 0],
-                rotation: [0, 0, 0]
-            })
             .axis({
                 detail: 30,
             })
@@ -235,8 +254,8 @@ _.noConflict();
             })
             .grid({
                 axes: [1, 3],
-                divideX: 2 * stRadius,
-                divideY: 2 * stRadius,
+                divideX: 2 * options.stRadius,
+                divideY: 2 * options.stRadius,
                 width: 1,
                 opacity: 0.5,
             }).array({
@@ -271,21 +290,21 @@ _.noConflict();
                 axis: 3
             })
             .transform({
-                position: [0, -stRadius, 0]
+                position: [0, -options.stRadius, 0]
             }).grid({
                 axes: [1, 3],
-                divideX: 2 * stRadius,
-                divideY: 2 * stRadius,
+                divideX: 2 * options.stRadius,
+                divideY: 2 * options.stRadius,
                 width: 1,
                 opacity: 0.5,
             })
             .end()
             .transform({
-                position: [0, stRadius, 0]
+                position: [0, options.stRadius, 0]
             }).grid({
                 axes: [1, 3],
-                divideX: 2 * stRadius,
-                divideY: 3 * stRadius,
+                divideX: 2 * options.stRadius,
+                divideY: 3 * options.stRadius,
                 width: 1,
                 opacity: 0.5,
             })
@@ -296,9 +315,9 @@ _.noConflict();
                 width: 1e4,
                 expr: function (emit, i, t) {
                     if (i < events.length &&
-                        Math.abs(events[i].relativePosition[0]) < stRadius &&
-                        Math.abs(events[i].relativePosition[1]) < stRadius &&
-                        Math.abs(events[i].relativePosition[2]) < stRadius) {
+                        Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                        Math.abs(events[i].relativePosition[1]) < options.stRadius &&
+                        Math.abs(events[i].relativePosition[2]) < options.stRadius) {
                         emit(events[i].relativePosition[0], events[i].relativePosition[2], -events[i].relativePosition[1]);
                     }
                 }
@@ -309,9 +328,9 @@ _.noConflict();
                 expr: function (emit, i, t) {
                     if (i < events.length) {
                         if (i < events.length &&
-                            Math.abs(events[i].relativePosition[0]) < stRadius &&
-                            Math.abs(events[i].relativePosition[1]) < stRadius &&
-                            Math.abs(events[i].relativePosition[2]) < stRadius) {
+                            Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                            Math.abs(events[i].relativePosition[1]) < options.stRadius &&
+                            Math.abs(events[i].relativePosition[2]) < options.stRadius) {
                             var color = events[i].color;
                             emit(color[0], color[1], color[2], 1.0);
                         }
