@@ -11,7 +11,6 @@ requestAnimationFrame(showStats);
 lodash = _;
 _.noConflict();
 
-
 !function (_) {
     mathbox = mathBox({
         plugins: ['core', 'controls', 'cursor'],
@@ -72,9 +71,6 @@ _.noConflict();
             return;
         }
 
-        var velocity = Math.sqrt(player.velocity[0] * player.velocity[0] + player.velocity[1] * player.velocity[1]);
-        var lorentzBoost = 1 / Math.sqrt(1 - velocity * velocity);
-        var relThrust = player.thrust / (lorentzBoost * player.mass);
         switch (e.keyCode) {
             case 65:
             case 37:
@@ -93,12 +89,6 @@ _.noConflict();
                 thrustSign = [0, -1];
                 break;
         }
-
-        if (!timerStarted) {
-            timerStarted = true;
-
-            initSimulation();
-        }
     }
 
     window.onkeyup = function () {
@@ -106,6 +96,10 @@ _.noConflict();
     }
 
     initDiagram(objectCount);
+    setTimeout(function () {
+        timerStarted = true;
+        initSimulation();
+    }, 1000);
 
     function initSimulation() {
         var lastFrameTime = startTime = Date.now();
@@ -205,11 +199,11 @@ _.noConflict();
             update();
         }, 1000);
 
-        setTimeout(function () {
-            console.log('ADVANCE');
-            clearTimeout(updateFrame);
-            timerEnded = true;
-        }, timeLimit * 1000);
+        // setTimeout(function () {
+        //     console.log('ADVANCE');
+        //     clearTimeout(updateFrame);
+        //     timerEnded = true;
+        // }, timeLimit * 1000);
     }
 
     function initDiagram(numItems) {
