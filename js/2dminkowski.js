@@ -121,6 +121,12 @@ _.noConflict();
     function initSimulation() {
         var lastFrameTime = startTime = Date.now();
         var updateFrame = setTimeout(update, 50);
+
+        var $vDisplay = $('<div></div>');
+        var $xDisplay = $('<div></div>');
+        var $display = $('<div class="info-display"></div>').append($vDisplay).append($xDisplay);
+        $('body').append($display);
+
         function update() {
             var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
             timeElapsed += timeSinceLastFrame;
@@ -143,6 +149,7 @@ _.noConflict();
                 cosTheta = Math.cos(theta),
                 sin2Theta = sinTheta * sinTheta,
                 cos2Theta = cosTheta * cosTheta;
+
             if (Math.abs(beta) > 1) {
                 beta = 0.9999;
                 referenceFrame.velocity = [
@@ -158,8 +165,8 @@ _.noConflict();
             }
             gamma = Math.sqrt(1 - beta * beta);
 
-            console.log('Y = ' + Math.round(gamma * 10000) / 10000 + ' b = ' + Math.round(beta * 10000) / 10000 + 'c');
-            console.log('v = ', player.velocity);
+            $vDisplay.text('v = ' + _.round(beta, 3) + 'c');
+            $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition[0], 3) + ' y = ' + _.round(referenceFrame.absolutePosition[1], 3));
 
 
             referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
