@@ -17,8 +17,12 @@
                 float dir = sign(xyzw.x - singularity);
 
                 float a = 0.0;
-                a = -0.5*rS/(r*r*sqrt(1.0-rS/r));
-                xyzw.x += 0.5*dir*a*xyzw.y*xyzw.y;
+                a = -1.0*rS/(r*r*sqrt(1.0-rS/r));
+                float dx = 0.5*dir*a*xyzw.y*xyzw.y;
+                if(abs(dx) > r) {
+                    dx = sign(dx)*r;
+                }
+                xyzw.x += dx;
             }
             return xyzw;
         }

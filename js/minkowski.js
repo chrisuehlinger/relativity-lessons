@@ -19,7 +19,7 @@ var options = {
     stRadius: 10,
     useRelativity: true,
     useLorentzBoost: true,
-    useBlackHoles: false,
+    useBlackHoles: true,
     showLightCones: true
 };
 
@@ -49,7 +49,7 @@ var player = {
     size: 5,
     reference: options.useRelativity
 },
-    others = lodash.fill(Array(0), 0).map(function () {
+    others = lodash.fill(Array(1), 0).map(function () {
         var pos = -1;//aMath.random()*20 - 10;
         return {
             absolutePosition: pos,
@@ -61,8 +61,8 @@ var player = {
         };
     }),
     blackHole = {
-        absolutePosition: -25,
-        relativePosition: -25,
+        absolutePosition: -10,
+        relativePosition: -10,
         velocity: 0,
         radius: 2,
         color: [0, 0, 0],
@@ -102,8 +102,7 @@ var player = {
             color: [0, 100, 0],
             size: 4
         };
-    }))
-    .concat(blackHoleEvents),
+    })).concat(blackHoleEvents),
     objects = [player].concat(others),
     eventCount = events.length,
     objectCount = objects.length;
@@ -201,7 +200,7 @@ function initSimulation() {
                 v = (v + 1)*(1-t) - 1;
                 // console.log(sign, lodash.round(t,3), lodash.round(v,3));
             }
-            object.absolutePosition += v*timeSinceLastFrame;
+            referenceFrame.absolutePosition -= v*timeSinceLastFrame;
 
             object.relativePosition = (object.absolutePosition - referenceFrame.absolutePosition);
         });
@@ -213,7 +212,7 @@ function initSimulation() {
                     // Calculated using Gullstrand-Painlevé coordinates
                     var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
                     var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
-                    var t = r > 0 ? sign*Math.sqrt(blackHole.radius / r) : 0;
+                    var t = r > 0 ? sign*(1-blackHole.radius/r)*Math.sqrt(blackHole.radius / r) : 0;
                     v = (v + 1)*(1-t/2) - 1;
                     console.log(sign, lodash.round(t,3), lodash.round(v,3));
                     if (r < 0.1) {
@@ -229,7 +228,6 @@ function initSimulation() {
                     var relGamma = Math.sqrt(1 - relativeVelocity * relativeVelocity) || 1;
                     object.relativePosition = relGamma * object.relativePosition;
                 }
-                var r = object.relativePosition - blackHole.relativePosition;
 
             }
         });
@@ -271,7 +269,7 @@ function initSimulation() {
                 v = (1-t) - 1;
                 // i === 50 && console.log(sign, lodash.round(t,3), lodash.round(v,3));
             }
-            event.absolutePosition[0] += v*(timeSinceLastFrame);
+            // event.absolutePosition[0] += v*(timeSinceLastFrame);
 
             // Galillean Relativity
             event.relativePosition = [
@@ -376,9 +374,9 @@ function initDiagram() {
         })
         .grid({
             divideX: 4 * options.stRadius,
-            detailX: 128,
+            detailX: 256,
             divideY: 4 * options.stRadius,
-            detailY: 128,
+            detailY: 256,
             width: 1,
             opacity: 0.5,
             zBias: -5,
