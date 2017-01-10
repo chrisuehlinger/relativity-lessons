@@ -175,7 +175,7 @@ window.onkeyup = function () {
 
 function initSimulation() {
     var lastFrameTime = startTime = Date.now();
-    var updateFrame = setTimeout(update, 50);
+    var updateFrame = requestAnimationFrame(update);
     function update() {
         var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
         timeElapsed += timeSinceLastFrame;
@@ -296,12 +296,7 @@ function initSimulation() {
             }
 
         });
-
-        events = events.filter(function (event) {
-            return event
-        });
-
-        updateFrame = setTimeout(update, 50);
+        updateFrame = requestAnimationFrame(update);
     }
 
     updateEvents();
@@ -334,7 +329,7 @@ function initSimulation() {
 
     setTimeout(function () {
         console.log('ADVANCE');
-        clearTimeout(updateFrame);
+        cancelAnimationFrame(updateFrame);
         timerEnded = true;
     }, options.timeLimit * 1000);
 }
