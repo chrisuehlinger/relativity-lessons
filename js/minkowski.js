@@ -30,7 +30,7 @@ _.noConflict();
         updatesPerSecond: 2,
         stRadius: 10,
         useRelativity: true,
-        useLorentzBoost: false,
+        useLorentzTransform: true,
         useBlackHoles: false,
         showLightCones: false
     };
@@ -43,7 +43,7 @@ _.noConflict();
     gui.add(options, 'useRelativity').onChange(function (useRelativity) {
         player.reference = useRelativity;
     });
-    gui.add(options, 'useLorentzBoost');
+    gui.add(options, 'useLorentzTransform');
     gui.add(options, 'useBlackHoles');
     gui.add(options, 'showLightCones');
 
@@ -62,7 +62,7 @@ _.noConflict();
         size: 5,
         reference: options.useRelativity
     },
-        others = _.fill(Array(2), 0).map(function (thing, i) {
+        others = _.fill(Array(0), 0).map(function (thing, i) {
             var pos = 5*Math.pow(-1, i);//Math.random()*20 - 10;
             return {
                 absolutePosition: pos,
@@ -73,7 +73,44 @@ _.noConflict();
                 size: 4,
                 reference: false
             };
-        }),
+        }).concat([
+            {
+                absolutePosition: -5,
+                relativePosition: -5,
+                velocity: 1,
+                properTime: 0,
+                color: [100, 0, 0],
+                size: 4,
+                reference: false
+            },
+            // {
+            //     absolutePosition: -5,
+            //     relativePosition: -5,
+            //     velocity: 0,
+            //     properTime: 0,
+            //     color: [100, 0, 0],
+            //     size: 4,
+            //     reference: false
+            // },
+            {
+                absolutePosition: 5,
+                relativePosition: 5,
+                velocity: 0.5,
+                properTime: 0,
+                color: [100, 0, 0],
+                size: 4,
+                reference: false
+            },
+            // {
+            //     absolutePosition: 10,
+            //     relativePosition: 10,
+            //     velocity: -0.5,
+            //     properTime: 0,
+            //     color: [100, 0, 0],
+            //     size: 4,
+            //     reference: false
+            // },
+        ]),
         blackHole = {
             absolutePosition: -20,
             relativePosition: -20,
@@ -153,7 +190,7 @@ _.noConflict();
                 break;
             case 76:
                 objects.push({
-                    absolutePosition: objects[1].absolutePosition,
+                    absolutePosition: objects[0].absolutePosition,
                     relativePosition: 0,
                     velocity: 1,
                     color: [100, 0, 100],
@@ -161,7 +198,7 @@ _.noConflict();
                     reference: false
                 });
                 objects.push({
-                    absolutePosition: objects[1].absolutePosition,
+                    absolutePosition: objects[0].absolutePosition,
                     relativePosition: 0,
                     velocity: -1,
                     color: [100, 0, 100],
@@ -193,7 +230,13 @@ _.noConflict();
 
         var $vDisplay = $('<div></div>');
         var $xDisplay = $('<div></div>');
-        var $display = $('<div class="info-display"></div>').append($vDisplay).append($xDisplay);
+        var $tDisplay = $('<div></div>');
+        var $tauDisplay = $('<div></div>');
+        var $display = $('<div class="info-display"></div>')
+            .append($vDisplay)
+            .append($xDisplay)
+            .append($tauDisplay)
+            .append($tDisplay);
         $('body').append($display);
         
         function update() {
@@ -205,22 +248,29 @@ _.noConflict();
                 absolutePosition: 0,
                 velocity: 0,
                 thrust: 0,
-                mass: 1
+                mass: 1,
+                properTime: timeElapsed
             }
 
-            var gamma = Math.sqrt(1 - player.velocity * player.velocity);
+            var gamma = 1/Math.sqrt(1 - player.velocity * player.velocity);
             var relThrust = player.thrust / (gamma * player.mass);
             player.velocity += thrustSign * relThrust * timeSinceLastFrame;
             player.velocity = Math.max(Math.min(player.velocity, 0.99999), -0.99999);
 
-            gamma = Math.sqrt(1 - referenceFrame.velocity * referenceFrame.velocity);
+            gamma = 1/Math.sqrt(1 - referenceFrame.velocity * referenceFrame.velocity);
 
-            referenceFrame.absolutePosition += referenceFrame.velocity * timeSinceLastFrame;
-            referenceFrame.relativePosition = 0;
-            referenceFrame.properTime += timeSinceLastFrame;
+            var dx = referenceFrame.velocity * timeSinceLastFrame,
+                dt = timeSinceLastFrame,
+                dxPrime = gamma*(dx-referenceFrame.velocity*dt),
+                dtPrime = gamma*(dt-referenceFrame.velocity*dx)
+            referenceFrame.absolutePosition += dx;
+            referenceFrame.relativePosition += dxPrime;// gamma*(referenceFrame.absolutePosition - referenceFrame.velocity*dt);
+            referenceFrame.properTime += dtPrime;
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
+            $tauDisplay.text('tau = ' + _.round(referenceFrame.properTime, 3));
+            $tDisplay.text('t = ' + _.round(timeElapsed, 3));
 
             blackHoles.map(function (object) {
                 var v = object.velocity;
@@ -254,24 +304,29 @@ _.noConflict();
                     }
 
 
-                    var relGamma = 1;
-                    if (options.useLorentzBoost) {
-                        var relV = (referenceFrame.velocity - v) / (1 - referenceFrame.velocity * v);
-                        relGamma = 1 / Math.sqrt(1 - relV * relV) || 1;
+                    if (options.useLorentzTransform) {
                     }
+                    // console.log('v = ' + _.round(object.velocity, 3) + 
+                    //             ' relV = ' + _.round(relV, 3) + 
+                    //             ' relGamma = ' + relGamma);
 
-                    object.properTime += timeSinceLastFrame;
-                    object.absolutePosition += v * timeSinceLastFrame;
-                    console.log('t = ' + _.round(object.properTime, 3) + 
-                                's v = ' + _.round(v,3) + 
-                                'c x = ' + _.round(object.absolutePosition, 3));
-                    object.relativePosition = (object.absolutePosition - referenceFrame.absolutePosition);
+                    object.absolutePosition += v*timeSinceLastFrame;
+                    object.properTime = timeElapsed;
+
+                    var xPrime = gamma*(object.absolutePosition - referenceFrame.velocity*object.properTime);
+                    var tPrime = gamma*(object.properTime - referenceFrame.velocity*object.absolutePosition);
+                    var relV = (object.velocity - referenceFrame.velocity)/(1 - object.velocity*referenceFrame.velocity);
+                    var pos = xPrime - relV*(tPrime - referenceFrame.properTime);
+                    object.relativePosition = pos;
+                    // console.log('t = ' + _.round(object.properTime, 3) + 
+                    //             's v = ' + _.round(v,3) + 
+                    //             'c x = ' + _.round(object.absolutePosition, 3));
 
                 }
             });
 
             events.map(function (event, i) {
-                var v = event.velocity;
+                var v = referenceFrame.velocity;
                 if (options.useBlackHoles) {
                     // Calculated using Gullstrand-Painlevé coordinates
                     var r = Math.abs(blackHole.absolutePosition - referenceFrame.absolutePosition);
@@ -285,19 +340,20 @@ _.noConflict();
                 var time = event.absolutePosition[1] - timeElapsed;
                 var pos = (event.absolutePosition[0] - referenceFrame.absolutePosition);
                 event.relativePosition = [
-                    pos - referenceFrame.velocity*time,
+                    pos - v*time,
                     time
                 ];
 
                 // Special Relativity
                 var relGamma = 1;
-                if (options.useLorentzBoost) {
-                    var relV = v / (1 - referenceFrame.velocity * event.velocity);
-                    relGamma = 1/Math.sqrt(1 - relV * relV);
-                    // console.log(v);
+                if (options.useLorentzTransform) {
+                    
+                    // console.log(v)
+                    var xPrime = gamma*(event.absolutePosition[0] - referenceFrame.velocity*event.absolutePosition[1]);
+                    var tPrime = gamma*(event.absolutePosition[1] - referenceFrame.velocity*event.absolutePosition[0]);
                     event.relativePosition = [
-                        relGamma * (pos - relV * time),
-                        relGamma * (time - relV * pos)
+                        xPrime,
+                        tPrime-timeElapsed
                     ];
                 }
 
@@ -322,7 +378,7 @@ _.noConflict();
                 ];
 
                 // Special Relativity
-                if (options.useLorentzBoost) {
+                if (options.useLorentzTransform) {
                     event.relativePosition = [
                         gamma * (event.relativePosition[0] - referenceFrame.velocity * event.relativePosition[1]),
                         gamma * (event.relativePosition[1] - referenceFrame.velocity * event.relativePosition[0])
@@ -349,7 +405,7 @@ _.noConflict();
 
             objects.map(function (object) {
                 events.push({
-                    absolutePosition: [object.absolutePosition, object.properTime],
+                    absolutePosition: [object.absolutePosition, newTime],//object.properTime],
                     relativePosition: [0, 0],
                     velocity: object.velocity,
                     color: object.color,
@@ -426,7 +482,7 @@ _.noConflict();
                 width: 50,
                 expr: function (emit, i, t) {
                     if (i < objects.length) {
-                        emit(objects[i].relativePosition, 0);
+                        emit(objects[i].relativePosition, 0);//timeElapsed-objects[i].properTime);
                     }
                 },
                 channels: 2
