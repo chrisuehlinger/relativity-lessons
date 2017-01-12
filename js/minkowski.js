@@ -257,20 +257,20 @@ _.noConflict();
             player.velocity += thrustSign * relThrust * timeSinceLastFrame;
             player.velocity = Math.max(Math.min(player.velocity, 0.99999), -0.99999);
 
-            gamma = 1/Math.sqrt(1 - referenceFrame.velocity * referenceFrame.velocity);
-
-            var dx = referenceFrame.velocity * timeSinceLastFrame,
-                dt = timeSinceLastFrame,
-                dxPrime = gamma*(dx-referenceFrame.velocity*dt),
-                dtPrime = gamma*(dt-referenceFrame.velocity*dx)
-            referenceFrame.absolutePosition += dx;
-            referenceFrame.relativePosition += dxPrime;// gamma*(referenceFrame.absolutePosition - referenceFrame.velocity*dt);
-            referenceFrame.properTime += dtPrime;
+            var tau = referenceFrame.properTime + timeSinceLastFrame;
+            var vFrame = referenceFrame.velocity;
+            gamma = 1/Math.sqrt(1 - vFrame*vFrame);
+            var xFrame = referenceFrame.absolutePosition + (tau - referenceFrame.properTime)*vFrame;
+            var tFrame = gamma*tau;
+            
+            referenceFrame.absolutePosition = xFrame;
+            referenceFrame.relativePosition = 0;
+            referenceFrame.properTime = tau;
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
             $tauDisplay.text('tau = ' + _.round(referenceFrame.properTime, 3));
-            $tDisplay.text('t = ' + _.round(timeElapsed, 3));
+            $tDisplay.text('t = ' + _.round(tFrame, 3));
 
             blackHoles.map(function (object) {
                 var v = object.velocity;
@@ -289,39 +289,45 @@ _.noConflict();
 
             objects.map(function (object, i) {
                 if (!object.reference) {
-                    var v = object.velocity;
-                    if (options.useBlackHoles) {
-                        // Calculated using Gullstrand-Painlevé coordinates
-                        var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
-                        var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
-                        var t = r > 0 ? sign * (1 - blackHole.radius / r) * Math.sqrt(blackHole.radius / r) : 0;
-                        v = (v + 1) * (1 - t / 2) - 1;
-                        console.log(sign, _.round(t, 3), _.round(v, 3));
-                        if (r < 0.1) {
-                            objects.splice(objects.indexOf(object), 1);
-                            return;
-                        }
-                    }
+                    // var v = object.velocity;
+                    // if (options.useBlackHoles) {
+                    //     // Calculated using Gullstrand-Painlevé coordinates
+                    //     var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
+                    //     var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
+                    //     var t = r > 0 ? sign * (1 - blackHole.radius / r) * Math.sqrt(blackHole.radius / r) : 0;
+                    //     v = (v + 1) * (1 - t / 2) - 1;
+                    //     console.log(sign, _.round(t, 3), _.round(v, 3));
+                    //     if (r < 0.1) {
+                    //         objects.splice(objects.indexOf(object), 1);
+                    //         return;
+                    //     }
+                    // }
 
 
                     if (options.useLorentzTransform) {
                     }
-                    // console.log('v = ' + _.round(object.velocity, 3) + 
-                    //             ' relV = ' + _.round(relV, 3) + 
-                    //             ' relGamma = ' + relGamma);
 
-                    object.absolutePosition += v*timeSinceLastFrame;
-                    object.properTime = timeElapsed;
+                    var x = object.absolutePosition,
+                        t = object.properTime,
+                        v = object.velocity,
+                        vPrime = (object.velocity - vFrame)/(1 - object.velocity*vFrame),
+                        dt = tFrame - t,
+                        dx = dt*v;
+                    
+                    x += dx;
+                    t += dt;
 
-                    var xPrime = gamma*(object.absolutePosition - referenceFrame.velocity*object.properTime);
-                    var tPrime = gamma*(object.properTime - referenceFrame.velocity*object.absolutePosition);
-                    var relV = (object.velocity - referenceFrame.velocity)/(1 - object.velocity*referenceFrame.velocity);
-                    var pos = xPrime - relV*(tPrime - referenceFrame.properTime);
-                    object.relativePosition = pos;
-                    // console.log('t = ' + _.round(object.properTime, 3) + 
-                    //             's v = ' + _.round(v,3) + 
-                    //             'c x = ' + _.round(object.absolutePosition, 3));
+                    var xPrime = gamma*(x - vFrame*t),
+                        tPrime = gamma*(t - vFrame*x);
+                    xPrime += (tau - tPrime)*vPrime;
 
+                    t = gamma*(tau + vFrame*xPrime);
+                    x = gamma*(xPrime + vFrame*tau);
+
+                    object.absolutePosition = x;
+                    object.properTime = t;
+
+                    object.relativePosition = xPrime;
                 }
             });
 
@@ -349,11 +355,11 @@ _.noConflict();
                 if (options.useLorentzTransform) {
                     
                     // console.log(v)
-                    var xPrime = gamma*(event.absolutePosition[0] - referenceFrame.velocity*event.absolutePosition[1]);
-                    var tPrime = gamma*(event.absolutePosition[1] - referenceFrame.velocity*event.absolutePosition[0]);
+                    var xPrime = gamma*(event.absolutePosition[0] - vFrame*event.absolutePosition[1]);
+                    var tPrime = gamma*(event.absolutePosition[1] - vFrame*event.absolutePosition[0]);
                     event.relativePosition = [
                         xPrime,
-                        tPrime-timeElapsed
+                        tPrime - timeElapsed
                     ];
                 }
 
