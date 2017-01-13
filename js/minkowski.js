@@ -257,15 +257,15 @@ _.noConflict();
             player.velocity += thrustSign * relThrust * timeSinceLastFrame;
             player.velocity = Math.max(Math.min(player.velocity, 0.99999), -0.99999);
 
-            var tau = referenceFrame.properTime + timeSinceLastFrame;
+            var tau = timeElapsed;
             var vFrame = referenceFrame.velocity;
             gamma = 1/Math.sqrt(1 - vFrame*vFrame);
-            var xFrame = referenceFrame.absolutePosition + (tau - referenceFrame.properTime)*vFrame;
             var tFrame = gamma*tau;
+            var xFrame = gamma*(0 + vFrame*tau);
             
             referenceFrame.absolutePosition = xFrame;
             referenceFrame.relativePosition = 0;
-            referenceFrame.properTime = tau;
+            referenceFrame.properTime = tFrame;
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
@@ -359,7 +359,7 @@ _.noConflict();
                     var tPrime = gamma*(event.absolutePosition[1] - vFrame*event.absolutePosition[0]);
                     event.relativePosition = [
                         xPrime,
-                        tPrime - timeElapsed
+                        tPrime - tau
                     ];
                 }
 
@@ -395,12 +395,10 @@ _.noConflict();
             updateFrame = requestAnimationFrame(update);
         }
 
-        updateEvents();
+        setTimeout(updateEvents, (1 / options.updatesPerSecond) * 1000);
 
         function updateEvents() {
-            var timeSinceLastFrame = options.timeFactor * (Date.now() - lastFrameTime) / 1000;
-            var newTime = timeElapsed + timeSinceLastFrame;
-            var pos = [Math.random() * 20 - 10, Math.random() * 10];
+            // var pos = [Math.random() * 20 - 10, Math.random() * 10];
             // events.push({
             //     absolutePosition: pos,
             //     relativePosition: pos,
@@ -409,9 +407,9 @@ _.noConflict();
             //     size: 4
             // });
 
-            objects.map(function (object) {
+            objects.map(function (object, i) {
                 events.push({
-                    absolutePosition: [object.absolutePosition, newTime],//object.properTime],
+                    absolutePosition: [object.absolutePosition, object.properTime],
                     relativePosition: [0, 0],
                     velocity: object.velocity,
                     color: object.color,
@@ -419,15 +417,16 @@ _.noConflict();
                 });
             });
 
+            cancelAnimationFrame(updateFrame);
             update();
             setTimeout(updateEvents, (1 / options.updatesPerSecond) * 1000);
         }
 
-        setTimeout(function () {
-            console.log('ADVANCE');
-            cancelAnimationFrame(updateFrame);
-            timerEnded = true;
-        }, options.timeLimit * 1000);
+        // setTimeout(function () {
+        //     console.log('ADVANCE');
+        //     cancelAnimationFrame(updateFrame);
+        //     timerEnded = true;
+        // }, options.timeLimit * 1000);
     }
 
     function initDiagram() {
