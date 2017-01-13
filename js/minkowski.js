@@ -46,6 +46,8 @@ _.noConflict();
     gui.add(options, 'useLorentzTransform');
     gui.add(options, 'useBlackHoles');
     gui.add(options, 'showLightCones');
+    gui.close();
+
 
     var timerStarted = false,
         timerEnded = false,
@@ -57,7 +59,7 @@ _.noConflict();
         velocity: 0.5,
         properTime:0,
         mass: 100,
-        thrust: 10,
+        thrust: 5,
         color: [0, 0, 255],
         size: 5,
         reference: options.useRelativity
@@ -135,7 +137,7 @@ _.noConflict();
     }),
         hmm = -10,
         events = _.fill(Array(100), 0).map(function () {
-            var pos = [Math.random() * 10, Math.random() * 100 - 10];
+        var pos = [Math.random()*20 - 10, Math.random() * 100 - 10];
             return {
                 absolutePosition: pos,
                 relativePosition: pos,
@@ -255,11 +257,11 @@ _.noConflict();
             var gamma = 1/Math.sqrt(1 - player.velocity * player.velocity);
             var relThrust = player.thrust / (gamma * player.mass);
             player.velocity += thrustSign * relThrust * timeSinceLastFrame;
-            player.velocity = Math.max(Math.min(player.velocity, 0.99999), -0.99999);
+            player.velocity = Math.max(Math.min(player.velocity, 0.99999999999999), -0.99999999999999);
 
-            var tau = timeElapsed;
             var vFrame = referenceFrame.velocity;
             gamma = 1/Math.sqrt(1 - vFrame*vFrame);
+            var tau = gamma*timeElapsed;
             var tFrame = gamma*tau;
             var xFrame = gamma*(0 + vFrame*tau);
             
@@ -269,7 +271,7 @@ _.noConflict();
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
-            $tauDisplay.text('tau = ' + _.round(referenceFrame.properTime, 3));
+            $tauDisplay.text('tau = ' + _.round(tau, 3));
             $tDisplay.text('t = ' + _.round(tFrame, 3));
 
             blackHoles.map(function (object) {
