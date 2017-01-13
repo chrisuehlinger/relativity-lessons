@@ -29,6 +29,7 @@ _.noConflict();
         timeFactor: 1,
         updatesPerSecond: 2,
         stRadius: 10,
+        clipEvents: false,
         useRelativity: true,
         useLorentzTransform: true,
         useBlackHoles: false,
@@ -40,13 +41,14 @@ _.noConflict();
     gui.add(options, 'timeFactor', 0, 2);
     gui.add(options, 'updatesPerSecond', 0, 5);
     // gui.add(options, 'stRadius', 0, 100);
+    gui.add(options, 'clipEvents');
     gui.add(options, 'useRelativity').onChange(function (useRelativity) {
         player.reference = useRelativity;
     });
     gui.add(options, 'useLorentzTransform');
     gui.add(options, 'useBlackHoles');
     gui.add(options, 'showLightCones');
-    gui.close();
+    // gui.close();
 
 
     var timerStarted = false,
@@ -161,6 +163,13 @@ _.noConflict();
         eventCount = events.length,
         objectCount = objects.length;
 
+    events.push({
+        absolutePosition: [0,0],
+        relativePosition: [0,0],
+        velocity: 0,
+        color: [100, 0, 100],
+        size: 10
+    });
 
     gui.add(player, 'velocity', -1, 1).listen();
 
@@ -261,9 +270,9 @@ _.noConflict();
 
             var vFrame = referenceFrame.velocity;
             gamma = 1/Math.sqrt(1 - vFrame*vFrame);
-            var tau = gamma*timeElapsed;
-            var tFrame = gamma*tau;
-            var xFrame = gamma*(0 + vFrame*tau);
+            var tau = timeElapsed;
+            var tFrame = referenceFrame.properTime + gamma*(timeSinceLastFrame + vFrame*0);
+            var xFrame = referenceFrame.absolutePosition + gamma*(0 + vFrame*timeSinceLastFrame);
             
             referenceFrame.absolutePosition = xFrame;
             referenceFrame.relativePosition = 0;
@@ -312,7 +321,7 @@ _.noConflict();
                     var x = object.absolutePosition,
                         t = object.properTime,
                         v = object.velocity,
-                        vPrime = (object.velocity - vFrame)/(1 - object.velocity*vFrame),
+                        vPrime = (vFrame - object.velocity)/(1 - object.velocity*vFrame),
                         dt = tFrame - t,
                         dx = dt*v;
                     
@@ -323,8 +332,8 @@ _.noConflict();
                         tPrime = gamma*(t - vFrame*x);
                     xPrime += (tau - tPrime)*vPrime;
 
-                    t = gamma*(tau + vFrame*xPrime);
-                    x = gamma*(xPrime + vFrame*tau);
+                    // t = gamma*(tau + vFrame*xPrime);
+                    // x = gamma*(xPrime + vFrame*tau);
 
                     object.absolutePosition = x;
                     object.properTime = t;
@@ -360,8 +369,8 @@ _.noConflict();
                     var xPrime = gamma*(event.absolutePosition[0] - vFrame*event.absolutePosition[1]);
                     var tPrime = gamma*(event.absolutePosition[1] - vFrame*event.absolutePosition[0]);
                     event.relativePosition = [
-                        xPrime,
-                        tPrime - tau
+                        xPrime - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
+                        tPrime - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition)
                     ];
                 }
 
@@ -435,6 +444,9 @@ _.noConflict();
         var warpShader = mathbox.shader({
             code: '#blackhole-curvature',
         }, {
+                vFrame: function(){
+                    return player.velocity;
+                },
                 useBlackHoles: function () {
                     return options.useBlackHoles ? 1 : 0;
                 },
@@ -529,8 +541,8 @@ _.noConflict();
             width: 1e4,
             expr: function (emit, i, t) {
                 if (i < events.length &&
-                    Math.abs(events[i].relativePosition[0]) < options.stRadius &&
-                    Math.abs(events[i].relativePosition[1]) < options.stRadius) {
+                    (!options.clipEvents || Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                    Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
                     emit(events[i].relativePosition[0], events[i].relativePosition[1]);
                 }
             }
@@ -541,8 +553,8 @@ _.noConflict();
             expr: function (emit, i, t) {
                 if (i < events.length) {
                     if (i < events.length &&
-                        Math.abs(events[i].relativePosition[0]) < options.stRadius &&
-                        Math.abs(events[i].relativePosition[1]) < options.stRadius) {
+                        (!options.clipEvents || Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                    Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
                         var color = events[i].color;
                         emit(color[0], color[1], color[2], 1.0);
                     }

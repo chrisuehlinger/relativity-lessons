@@ -11,8 +11,17 @@
         uniform float useBlackHoles;
         uniform float singularity;
         uniform float rS;
+        uniform float vFrame;
 
         vec4 warpVertex(vec4 xyzw, inout vec4 stpq) {
+            float gamma = 1.0/sqrt(1.0-vFrame*vFrame);
+            float x = xyzw.x;
+            float t = xyzw.y;
+
+            // xyzw.x = gamma*(x + vFrame*t);
+            // xyzw.y = gamma*(t + vFrame*x);
+
+
             if( useBlackHoles > 0.0) {
                 float r = abs(xyzw.x - singularity);
                 float dir = sign(xyzw.x - singularity);
