@@ -323,13 +323,17 @@ _.noConflict();
 
                     var x = object.absolutePosition,
                         t = object.properTime,
-                        v = object.velocity,
+                        v = object.velocity
                         vPrime = (object.velocity - vFrame)/(1 - object.velocity*vFrame),
                         dt = tFrame - t,
                         dx = dt*v;
                     
                     x += dx;
                     t += dt;
+
+                    // var x = ((-(tFrame - vFrame*xFrame) - (v*x0+t0))/v);
+                    // x /= 1-(vFrame/v);
+                    // var t = v*x + (v*x0 + t0);
 
                     var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
                         tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
@@ -340,20 +344,21 @@ _.noConflict();
                     xPrime -= tPrime*vPrime;
                     tPrime -= tPrime;
 
+                    t = gamma*(tau + vFrame*xPrime);
+                    x = gamma*(xPrime + vFrame*tau);
+
+
                     object.absolutePosition = x;
                     object.properTime = t;
 
-                    t = gamma*(tau + vFrame*xPrime);
-                    x = gamma*(xPrime + vFrame*tau);
-                    if(v === 1){
-                        console.log(_.round(x, 3), _.round(t, 3));
-                    }
-
                     object.eventPosition = x;
                     object.eventTime = t;
+                    // if(v === 1){
+                    //     console.log(_.round(x, 3), _.round(t, 3));
+                    // }
 
-                    object.relativePosition = xPrime;
-                    object.currentTime = tPrime;
+                    // object.relativePosition = xPrime;
+                    // object.currentTime = tau;
                 }
             });
 
@@ -384,8 +389,8 @@ _.noConflict();
                     var vPrime = (event.velocity - referenceFrame.velocity)/(1-event.velocity*referenceFrame.velocity)
                     var x = event.absolutePosition[0];
                     var t = event.absolutePosition[1];
-                    var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime);
-                    var tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
+                    var xPrime = gamma*(x - vFrame*t)// - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime);
+                    var tPrime = gamma*(t - vFrame*x)// - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
                     event.relativePosition = [
                         xPrime,
                         tPrime
@@ -445,13 +450,13 @@ _.noConflict();
                     color: object.color,
                     size: object.size
                 });
-                events.push({
-                    absolutePosition: [object.absolutePosition, object.properTime],
-                    relativePosition: [0, 0],
-                    velocity: object.velocity,
-                    color: [0,0,0],
-                    size: object.size
-                });
+                // events.push({
+                //     absolutePosition: [object.absolutePosition, object.properTime],
+                //     relativePosition: [0, 0],
+                //     velocity: object.velocity,
+                //     color: [0,0,0],
+                //     size: object.size
+                // });
             });
 
             cancelAnimationFrame(updateFrame);
@@ -472,6 +477,12 @@ _.noConflict();
         }, {
                 vFrame: function(){
                     return player.velocity;
+                },
+                tFrame: function(){
+                    return player.properTime;
+                },
+                xFrame: function(){
+                    return player.absolutePosition;
                 },
                 useBlackHoles: function () {
                     return options.useBlackHoles ? 1 : 0;
@@ -502,6 +513,22 @@ _.noConflict();
                 classes: ['foo', 'bar'],
                 width: 2
             })
+            .axis({
+                detail: 64,
+            })
+            .axis({
+                axis: 2,
+                detail: 64
+            })
+            .grid({
+                divideX: 2 * options.stRadius,
+                detailX: 256,
+                divideY: 2 * options.stRadius,
+                detailY: 256,
+                width: 1,
+                opacity: 0.5,
+                zBias: -5,
+            })
             .vertex({
                 pass: 'data'
             })
@@ -527,7 +554,7 @@ _.noConflict();
                 width: 50,
                 expr: function (emit, i, t) {
                     if (i < objects.length) {
-                        emit(objects[i].relativePosition, objects[i].currentTime);
+                        emit(objects[i].absolutePosition, objects[i].properTime);
                     }
                 },
                 channels: 2
@@ -569,7 +596,7 @@ _.noConflict();
                 if (i < events.length &&
                     (!options.clipEvents || Math.abs(events[i].relativePosition[0]) < options.stRadius &&
                     Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
-                    emit(events[i].relativePosition[0], events[i].relativePosition[1]);
+                    emit(events[i].absolutePosition[0], events[i].absolutePosition[1]);
                 }
             }
         }).array({
