@@ -278,6 +278,8 @@ _.noConflict();
             referenceFrame.relativePosition = 0;
             referenceFrame.properTime = tFrame;
             referenceFrame.currentTime = 0;
+            referenceFrame.eventPosition = xFrame;
+            referenceFrame.eventTime = tFrame;
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
@@ -329,23 +331,29 @@ _.noConflict();
                     x += dx;
                     t += dt;
 
-                    object.absolutePosition = x;
-                    object.properTime = t;
-
                     var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
                         tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
 
-                    // if(v === 1){
-                    //     console.log(_.round(tau - tPrime, 3), _.round(xPrime, 3), _.round(vPrime, 3));
-                    // }
-                    // xPrime += (tau - tPrime)*vPrime;
+                    if(v === 1){
+                        console.log(_.round(xPrime, 3), _.round(tPrime, 3), _.round(vPrime, 3));
+                    }
+                    xPrime -= tPrime*vPrime;
+                    tPrime -= tPrime;
 
-                    // t = gamma*(tau + vFrame*xPrime);
-                    // x = gamma*(xPrime + vFrame*tau);
+                    object.absolutePosition = x;
+                    object.properTime = t;
 
+                    t = gamma*(tau + vFrame*xPrime);
+                    x = gamma*(xPrime + vFrame*tau);
+                    if(v === 1){
+                        console.log(_.round(x, 3), _.round(t, 3));
+                    }
 
-                    object.relativePosition = xPrime - vPrime*tPrime;
-                    object.currentTime = tPrime - tPrime;
+                    object.eventPosition = x;
+                    object.eventTime = t;
+
+                    object.relativePosition = xPrime;
+                    object.currentTime = tPrime;
                 }
             });
 
@@ -373,13 +381,14 @@ _.noConflict();
                 if (options.useLorentzTransform) {
                     
                     // console.log(v)
+                    var vPrime = (event.velocity - referenceFrame.velocity)/(1-event.velocity*referenceFrame.velocity)
                     var x = event.absolutePosition[0];
                     var t = event.absolutePosition[1];
-                    var xPrime = gamma*(x - vFrame*t);
-                    var tPrime = gamma*(t - vFrame*x);
+                    var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime);
+                    var tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
                     event.relativePosition = [
-                        xPrime - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
-                        tPrime - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition)
+                        xPrime,
+                        tPrime
                     ];
                 }
 
@@ -426,13 +435,21 @@ _.noConflict();
             //     color: [0, 100, 0],
             //     size: 4
             // });
+            // events = [];
 
             objects.map(function (object, i) {
+                events.push({
+                    absolutePosition: [object.eventPosition, object.eventTime],
+                    relativePosition: [0, 0],
+                    velocity: object.velocity,
+                    color: object.color,
+                    size: object.size
+                });
                 events.push({
                     absolutePosition: [object.absolutePosition, object.properTime],
                     relativePosition: [0, 0],
                     velocity: object.velocity,
-                    color: object.color,
+                    color: [0,0,0],
                     size: object.size
                 });
             });
