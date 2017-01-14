@@ -18,9 +18,8 @@
             float x = xyzw.x;
             float t = xyzw.y;
 
-            // xyzw.x = gamma*(x + vFrame*t);
-            // xyzw.y = gamma*(t + vFrame*x);
-
+            // xyzw.x = gamma*(x - vFrame*t);
+            // xyzw.y = gamma*(t - vFrame*x);
 
             if( useBlackHoles > 0.0) {
                 float r = abs(xyzw.x - singularity);

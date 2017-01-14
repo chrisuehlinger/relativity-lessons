@@ -277,6 +277,7 @@ _.noConflict();
             referenceFrame.absolutePosition = xFrame;
             referenceFrame.relativePosition = 0;
             referenceFrame.properTime = tFrame;
+            referenceFrame.currentTime = 0;
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
@@ -321,24 +322,30 @@ _.noConflict();
                     var x = object.absolutePosition,
                         t = object.properTime,
                         v = object.velocity,
-                        vPrime = (vFrame - object.velocity)/(1 - object.velocity*vFrame),
+                        vPrime = (object.velocity - vFrame)/(1 - object.velocity*vFrame),
                         dt = tFrame - t,
                         dx = dt*v;
                     
                     x += dx;
                     t += dt;
 
-                    var xPrime = gamma*(x - vFrame*t),
-                        tPrime = gamma*(t - vFrame*x);
-                    xPrime += (tau - tPrime)*vPrime;
+                    object.absolutePosition = x;
+                    object.properTime = t;
+
+                    var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
+                        tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
+
+                    // if(v === 1){
+                    //     console.log(_.round(tau - tPrime, 3), _.round(xPrime, 3), _.round(vPrime, 3));
+                    // }
+                    // xPrime += (tau - tPrime)*vPrime;
 
                     // t = gamma*(tau + vFrame*xPrime);
                     // x = gamma*(xPrime + vFrame*tau);
 
-                    object.absolutePosition = x;
-                    object.properTime = t;
 
-                    object.relativePosition = xPrime;
+                    object.relativePosition = xPrime - vPrime*tPrime;
+                    object.currentTime = tPrime - tPrime;
                 }
             });
 
@@ -366,8 +373,10 @@ _.noConflict();
                 if (options.useLorentzTransform) {
                     
                     // console.log(v)
-                    var xPrime = gamma*(event.absolutePosition[0] - vFrame*event.absolutePosition[1]);
-                    var tPrime = gamma*(event.absolutePosition[1] - vFrame*event.absolutePosition[0]);
+                    var x = event.absolutePosition[0];
+                    var t = event.absolutePosition[1];
+                    var xPrime = gamma*(x - vFrame*t);
+                    var tPrime = gamma*(t - vFrame*x);
                     event.relativePosition = [
                         xPrime - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
                         tPrime - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition)
@@ -501,7 +510,7 @@ _.noConflict();
                 width: 50,
                 expr: function (emit, i, t) {
                     if (i < objects.length) {
-                        emit(objects[i].relativePosition, 0);//timeElapsed-objects[i].properTime);
+                        emit(objects[i].relativePosition, objects[i].currentTime);
                     }
                 },
                 channels: 2
