@@ -9,6 +9,7 @@
     <body>
         <script type="application/glsl" id="blackhole-curvature">
         uniform float useBlackHoles;
+        uniform float debugSR;
         uniform float singularity;
         uniform float rS;
         uniform float vFrame;
@@ -20,8 +21,10 @@
             float x = xyzw.x;
             float t = xyzw.y;
 
-            xyzw.x = gamma*(x + vFrame*t) + xFrame;
-            xyzw.y = gamma*(t + vFrame*x) + tFrame;
+            if( debugSR > 0.0 ) {
+                xyzw.x = gamma*(x + vFrame*t) + xFrame;
+                xyzw.y = gamma*(t + vFrame*x) + tFrame;
+            }
 
             if( useBlackHoles > 0.0) {
                 float r = abs(xyzw.x - singularity);
