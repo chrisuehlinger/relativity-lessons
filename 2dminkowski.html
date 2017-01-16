@@ -5,7 +5,34 @@
         <link rel="stylesheet" href="bower_components/mathbox/build/mathbox.css" />
         <link rel="stylesheet" href="css/style.css" />
     </head>
-    <body>
+    <body>        
+        <script type="application/glsl" id="sr-debug">
+        uniform float debugSR;
+        uniform vec2 vFrame;
+        uniform float tFrame;
+        uniform float xFrame;
+        uniform float yFrame;
+
+        vec4 warpVertex(vec4 xyzw, inout vec4 stpq) {
+            float beta = sqrt(vFrame.x * vFrame.x + vFrame.y * vFrame.y),
+                gamma = 1.0/sqrt(1.0-beta*beta),
+                theta = atan(vFrame.y, vFrame.x),
+                sinTheta = sin(theta),
+                cosTheta = cos(theta),
+                sin2Theta = sinTheta*sinTheta,
+                cos2Theta = cosTheta*cosTheta,
+                x = xyzw.x,
+                y = -xyzw.z,
+                t = xyzw.y;
+
+            if( debugSR > 0.0 ) {
+                xyzw.x = beta * gamma * cosTheta * t + (gamma * cos2Theta + sin2Theta) * x + (gamma - 1.0) * sinTheta * cosTheta * y + xFrame;
+                xyzw.z = -1.0 *(beta * gamma * sinTheta * t + (gamma * sin2Theta + cos2Theta) * y + (gamma - 1.0) * sinTheta * cosTheta * x + yFrame);
+                xyzw.y = gamma * t + gamma * beta * cosTheta * x + gamma * beta * sinTheta * y + tFrame;
+            }
+            return xyzw;
+        }
+        </script>
         <script src="bower_components/mathbox/build/mathbox-bundle.js"></script>
         <script src="bower_components/lodash/lodash.js"></script>
         <script src="bower_components/jquery/dist/jquery.js"></script>

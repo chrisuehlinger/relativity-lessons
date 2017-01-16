@@ -28,10 +28,11 @@ _.noConflict();
         updatesPerSecond: 2,
         stRadius: 10,
         clipEvents: false,
+        debugSR: true,
         useRelativity: true,
         useLorentzBoost: true,
         useBlackHoles: true,
-        showLightCones: true
+        showLightCones: false
     };
 
     var gui = new dat.GUI();
@@ -40,6 +41,7 @@ _.noConflict();
     gui.add(options, 'updatesPerSecond', 0, 5);
     // gui.add(options, 'stRadius', 0, 100);
     gui.add(options, 'clipEvents');
+    gui.add(options, 'debugSR');
     gui.add(options, 'useRelativity').onChange(function (useRelativity) {
         player.reference = useRelativity;
     });
@@ -56,7 +58,7 @@ _.noConflict();
         relativePosition: [0, 0],
         mass: 100,
         thrust: 5,
-        velocity: [0, 0],
+        velocity: [0.5, 0],
         color: [0, 0, 255],
         size: 5,
         reference: options.useRelativity
@@ -66,7 +68,7 @@ _.noConflict();
             return {
                 absolutePosition: pos,
                 relativePosition: pos,
-                velocity: [0, 0],
+                velocity: [0, 0.5],
                 color: [100, 0, 0],
                 size: 4,
                 reference: false
@@ -173,21 +175,22 @@ _.noConflict();
 
             referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
             referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
+            referenceFrame.properTime = timeElapsed;
 
-            // objects.map(function(object){
-            //     if(!object.reference) {
-            //         // var relativeVelocityX = referenceFrame.velocity[0] - object.velocity[0],
-            //         //     relativeVelocityY = referenceFrame.velocity[1] - object.velocity[1],
-            //         //     relativeVelocity = Math.sqrt(relativeVelocityX*relativeVelocityX + relativeVelocityY*relativeVelocityY);
-            //         // var lorentzBoost = options.useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
-            //         object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
-            //         object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
-            //         // object.relativePosition = [
-            //         //     lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
-            //         //     lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
-            //         // ];
-            //     }
-            // });
+            objects.map(function(object){
+                if(!object.reference) {
+                    // var relativeVelocityX = referenceFrame.velocity[0] - object.velocity[0],
+                    //     relativeVelocityY = referenceFrame.velocity[1] - object.velocity[1],
+                    //     relativeVelocity = Math.sqrt(relativeVelocityX*relativeVelocityX + relativeVelocityY*relativeVelocityY);
+                    // var lorentzBoost = options.useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
+                    object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
+                    object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
+                    // object.relativePosition = [
+                    //     lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
+                    //     lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
+                    // ];
+                }
+            });
 
             events.map(function (event) {
                 event.relativePosition = [
@@ -239,6 +242,25 @@ _.noConflict();
     }
 
     function initDiagram(numItems) {
+        var warpShader = mathbox.shader({
+            code: '#sr-debug',
+        }, {
+            vFrame: function(){
+                return player.velocity;
+            },
+            tFrame: function(){
+                return player.properTime;
+            },
+            xFrame: function(){
+                return player.absolutePosition[0];
+            },
+            yFrame: function(){
+                return player.absolutePosition[1];
+            },
+            debugSR: function () {
+                return options.debugSR ? 1 : 0;
+            },
+        });
         var view = mathbox
             .set({
                 focus: 3,
@@ -267,11 +289,39 @@ _.noConflict();
                 divideY: 2 * options.stRadius,
                 width: 1,
                 opacity: 0.5,
-            }).array({
+            })
+            .vertex({
+                pass: 'data'
+            })
+                .axis({
+                    detail: 64,
+                })
+                .axis({
+                    axis: 2,
+                    detail: 64
+                })
+                .axis({
+                    axis: 3,
+                    detail: 64
+                })
+                .grid({
+                    axes: [1,3],
+                    divideX: 2 * options.stRadius,
+                    detailX: 256,
+                    divideY: 2 * options.stRadius,
+                    detailY: 256,
+                    width: 1,
+                    opacity: 0.5,
+                    zBias: -5,
+                })
+            .end()
+            .array({
                 id: 'currentPosition',
                 width: numItems,
                 expr: function (emit, i, t) {
-                    emit(objects[i].relativePosition[0], 0, -objects[i].relativePosition[1]);
+                    options.debugSR
+                        ?emit(objects[i].absolutePosition[0], objects[i].properTime, -objects[i].absolutePosition[1])
+                        : emit(objects[i].relativePosition[0], 0, -objects[i].relativePosition[1]);
                 },
                 channels: 3,
             })
@@ -328,7 +378,9 @@ _.noConflict();
                         Math.abs(events[i].relativePosition[0]) < options.stRadius &&
                         Math.abs(events[i].relativePosition[1]) < options.stRadius &&
                         Math.abs(events[i].relativePosition[2]) < options.stRadius)) {
-                        emit(events[i].relativePosition[0], events[i].relativePosition[2], -events[i].relativePosition[1]);
+                            options.debugSR
+                                ? emit(events[i].absolutePosition[0], events[i].absolutePosition[2], -events[i].absolutePosition[1])
+                                : emit(events[i].relativePosition[0], events[i].relativePosition[2], -events[i].relativePosition[1]);
                     }
                 }
             }).array({
