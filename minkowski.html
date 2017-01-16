@@ -9,10 +9,23 @@
     <body>
         <script type="application/glsl" id="blackhole-curvature">
         uniform float useBlackHoles;
+        uniform float debugSR;
         uniform float singularity;
         uniform float rS;
+        uniform float vFrame;
+        uniform float tFrame;
+        uniform float xFrame;
 
         vec4 warpVertex(vec4 xyzw, inout vec4 stpq) {
+            float gamma = 1.0/sqrt(1.0-vFrame*vFrame);
+            float x = xyzw.x;
+            float t = xyzw.y;
+
+            if( debugSR > 0.0 ) {
+                xyzw.x = gamma*(x + vFrame*t) + xFrame;
+                xyzw.y = gamma*(t + vFrame*x) + tFrame;
+            }
+
             if( useBlackHoles > 0.0) {
                 float r = abs(xyzw.x - singularity);
                 float dir = sign(xyzw.x - singularity);
