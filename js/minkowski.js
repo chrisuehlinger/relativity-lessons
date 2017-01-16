@@ -577,7 +577,8 @@ _.noConflict();
             width: 1e4,
             expr: function (emit, i, t) {
                 if (i < events.length &&
-                    (!options.clipEvents || Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                    (!options.clipEvents || 
+                    Math.abs(events[i].relativePosition[0]) < options.stRadius &&
                     Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
                         options.debugSR
                             ? emit(events[i].absolutePosition[0], events[i].absolutePosition[1])

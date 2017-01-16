@@ -27,6 +27,7 @@ _.noConflict();
         timeFactor: 1,
         updatesPerSecond: 2,
         stRadius: 10,
+        clipEvents: false,
         useRelativity: true,
         useLorentzBoost: true,
         useBlackHoles: true,
@@ -38,6 +39,7 @@ _.noConflict();
     gui.add(options, 'timeFactor', 0, 2);
     gui.add(options, 'updatesPerSecond', 0, 5);
     // gui.add(options, 'stRadius', 0, 100);
+    gui.add(options, 'clipEvents');
     gui.add(options, 'useRelativity').onChange(function (useRelativity) {
         player.reference = useRelativity;
     });
@@ -322,9 +324,10 @@ _.noConflict();
                 width: 1e4,
                 expr: function (emit, i, t) {
                     if (i < events.length &&
+                        (!options.clipEvents || 
                         Math.abs(events[i].relativePosition[0]) < options.stRadius &&
                         Math.abs(events[i].relativePosition[1]) < options.stRadius &&
-                        Math.abs(events[i].relativePosition[2]) < options.stRadius) {
+                        Math.abs(events[i].relativePosition[2]) < options.stRadius)) {
                         emit(events[i].relativePosition[0], events[i].relativePosition[2], -events[i].relativePosition[1]);
                     }
                 }
@@ -335,9 +338,10 @@ _.noConflict();
                 expr: function (emit, i, t) {
                     if (i < events.length) {
                         if (i < events.length &&
+                            (!options.clipEvents || 
                             Math.abs(events[i].relativePosition[0]) < options.stRadius &&
                             Math.abs(events[i].relativePosition[1]) < options.stRadius &&
-                            Math.abs(events[i].relativePosition[2]) < options.stRadius) {
+                            Math.abs(events[i].relativePosition[2]) < options.stRadius)) {
                             var color = events[i].color;
                             emit(color[0], color[1], color[2], 1.0);
                         }
