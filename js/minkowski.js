@@ -321,31 +321,29 @@ _.noConflict();
                     if (options.useLorentzTransform) {
                     }
 
-                    var x = object.absolutePosition,
-                        t = object.properTime,
-                        v = object.velocity
-                        vPrime = (object.velocity - vFrame)/(1 - object.velocity*vFrame),
-                        dt = tFrame - t,
-                        dx = dt*v;
+                    var x0 = object.absolutePosition,
+                        t0 = object.properTime,
+                        v = object.velocity,
+                        x = ((t0 - x0/v) - (tFrame - vFrame*xFrame))/(vFrame - 1/v),
+                        t = x/v + (t0 - x0/v);
+                    //     vPrime = (object.velocity - vFrame)/(1 - object.velocity*vFrame),
+                    //     dt = tFrame - t,
+                    //     dx = dt*v;
                     
-                    x += dx;
-                    t += dt;
+                    // x += dx;
+                    // t += dt;
 
-                    // var x = ((-(tFrame - vFrame*xFrame) - (v*x0+t0))/v);
-                    // x /= 1-(vFrame/v);
-                    // var t = v*x + (v*x0 + t0);
+                    // var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
+                    //     tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
 
-                    var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
-                        tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
+                    // if(v === 1){
+                    //     console.log(_.round(xPrime, 3), _.round(tPrime, 3), _.round(vPrime, 3));
+                    // }
+                    // xPrime -= tPrime*vPrime;
+                    // tPrime -= tPrime;
 
-                    if(v === 1){
-                        console.log(_.round(xPrime, 3), _.round(tPrime, 3), _.round(vPrime, 3));
-                    }
-                    xPrime -= tPrime*vPrime;
-                    tPrime -= tPrime;
-
-                    t = gamma*(tau + vFrame*xPrime);
-                    x = gamma*(xPrime + vFrame*tau);
+                    // t = gamma*(tau + vFrame*xPrime);
+                    // x = gamma*(xPrime + vFrame*tau);
 
 
                     object.absolutePosition = x;
@@ -353,9 +351,9 @@ _.noConflict();
 
                     object.eventPosition = x;
                     object.eventTime = t;
-                    // if(v === 1){
-                    //     console.log(_.round(x, 3), _.round(t, 3));
-                    // }
+                    if(v === 1){
+                        console.log(_.round(x, 3), _.round(t, 3));
+                    }
 
                     // object.relativePosition = xPrime;
                     // object.currentTime = tau;
@@ -640,6 +638,49 @@ _.noConflict();
             points: '#blackHoles',
             color: 0,
             size: 10
+        })
+
+        view.interval({
+            channels: 2,
+            width: 10,
+            expr: function (emit, x) {
+                var t = (x*player.velocity) + (player.properTime - (player.velocity*player.absolutePosition));
+                emit(x,t);
+            }
+        }).line({
+            color: 0x0000FF,
+        })
+
+        view.interval({
+            channels: 2,
+            width: 10,
+            expr: function (emit, x) {
+                var object = objects[1];
+                var t = (x/object.velocity) + (object.properTime - (object.absolutePosition/object.velocity));
+                emit(x,t);
+            }
+        }).line({
+            color: 0xFF0000,
+        })
+
+        view.array({
+            channels: 2,
+            width: 1,
+            expr: function (emit) {
+                var obj = objects[1],
+                    vF = player.velocity,
+                    tF = player.properTime,
+                    xF = player.absolutePosition,
+                    v = obj.velocity,
+                    t0 = obj.properTime,
+                    x0 = obj.absolutePosition,
+                    x = ((t0 - x0/v) - (tF - vF*xF))/(vF - 1/v),
+                    t = x/v + (t0 - x0/v);
+                emit(x,t);
+            }
+        }).point({
+            color: 0x00FF00,
+            size: 20
         })
 
         view.array({
