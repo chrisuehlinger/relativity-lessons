@@ -30,7 +30,7 @@ _.noConflict();
         clipEvents: false,
         debugSR: false,
         useRelativity: true,
-        useLorentzBoost: false,
+        useLorentzBoost: true,
         useBlackHoles: true,
         showLightCones: false
     };
@@ -138,7 +138,7 @@ _.noConflict();
 
     function initSimulation() {
         var lastFrameTime = startTime = Date.now();
-        var updateFrame = setTimeout(update, 50);
+        var updateFrame = requestAnimationFrame(update);
 
         var $vDisplay = $('<div></div>');
         var $xDisplay = $('<div></div>');
@@ -263,7 +263,7 @@ _.noConflict();
                 }
             });
 
-            updateFrame = setTimeout(update, 50);
+            updateFrame = requestAnimationFrame(update);
         }
 
 
@@ -279,14 +279,14 @@ _.noConflict();
                 });
             });
 
-            clearTimeout(updateFrame);
+            cancelAnimationFrame(updateFrame);
             update();
             setTimeout(updateEvents, (1/options.updatesPerSecond) * 1000);
         }
 
         // setTimeout(function () {
         //     console.log('ADVANCE');
-        //     clearTimeout(updateFrame);
+        //     cancelAnimationFrame(updateFrame);
         //     timerEnded = true;
         // }, options.timeLimit * 1000);
     }
