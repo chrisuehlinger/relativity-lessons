@@ -32,7 +32,7 @@ _.noConflict();
         clipEvents: false,
         useRelativity: true,
         debugSR: false,
-        useLorentzTransform: false,
+        useLorentzTransform: true,
         useBlackHoles: false,
         showLightCones: true
     };
@@ -276,8 +276,8 @@ _.noConflict();
             var tFrame = referenceFrame.properTime + gamma*(timeSinceLastFrame + vFrame*0);
             var xFrame = referenceFrame.absolutePosition + gamma*(0 + vFrame*timeSinceLastFrame);
             
-            referenceFrame.absolutePosition += vFrame*timeSinceLastFrame;
-            referenceFrame.properTime += timeSinceLastFrame;
+            referenceFrame.absolutePosition += gamma*vFrame*timeSinceLastFrame;
+            referenceFrame.properTime += gamma*timeSinceLastFrame;
             referenceFrame.relativePosition = 0;
             referenceFrame.currentTime = 0;
             if (options.useLorentzTransform) {
@@ -332,8 +332,10 @@ _.noConflict();
                             t0 = object.properTime,
                             x = ((t0 - x0/v) - (tFrame - vFrame*xFrame))/(vFrame - 1/v),
                             t = x/v + (t0 - x0/v),
-                            xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
-                            tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
+                            dx = (x - referenceFrame.absolutePosition),
+                            dt = (t - referenceFrame.properTime),
+                            xPrime = gamma*(dx - vFrame*dt),
+                            tPrime = gamma*(dt - vFrame*dx);
 
                         object.absolutePosition = x;
                         object.properTime = t;
@@ -365,10 +367,12 @@ _.noConflict();
 
                 // Special Relativity
                 if (options.useLorentzTransform) {
-                    var x = event.absolutePosition[0];
-                    var t = event.absolutePosition[1];
-                    var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime);
-                    var tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
+                    var x = event.absolutePosition[0],
+                        t = event.absolutePosition[1],
+                        dx = x - referenceFrame.absolutePosition,
+                        dt = t - referenceFrame.properTime,
+                        xPrime = gamma*(dx - vFrame*dt),
+                        tPrime = gamma*(dt - vFrame*dx);
                     event.relativePosition = [
                         xPrime,
                         tPrime
@@ -577,7 +581,8 @@ _.noConflict();
             width: 1e4,
             expr: function (emit, i, t) {
                 if (i < events.length &&
-                    (!options.clipEvents || Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                    (!options.clipEvents || 
+                    Math.abs(events[i].relativePosition[0]) < options.stRadius &&
                     Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
                         options.debugSR
                             ? emit(events[i].absolutePosition[0], events[i].absolutePosition[1])
@@ -643,10 +648,11 @@ _.noConflict();
         view.interval({
             channels: 2,
             width: 10,
-            expr: function (emit, x) {
+            expr: function (emit, t) {
                 if(options.debugSR) {
                     var object = objects[1];
-                    var t = (x/object.velocity) + (object.properTime - (object.absolutePosition/object.velocity));
+                    var x = object.velocity*(t - (object.properTime - object.absolutePosition/object.velocity));
+                    // var t = (x/object.velocity) + (object.properTime - (object.absolutePosition/object.velocity));
                     emit(x,t);
                 }
             }
