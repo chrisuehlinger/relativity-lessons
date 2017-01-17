@@ -56,6 +56,7 @@ _.noConflict();
     var player = {
         absolutePosition: [0, 0],
         relativePosition: [0, 0],
+        properTime: 0,
         mass: 100,
         thrust: 5,
         velocity: [0.25, 0.25],
@@ -64,17 +65,19 @@ _.noConflict();
         reference: options.useRelativity
     },
         others = _.fill(Array(1), 0).map(function () {
-            var pos = [Math.random() * 20 - 10, Math.random() * 20 - 10];
+            // var pos = [Math.random() * 20 - 10, Math.random() * 20 - 10];
+            var pos = [5,-5];
             return {
                 absolutePosition: pos,
                 relativePosition: pos,
+                properTime: 0,
                 velocity: [0.000001, 0.5],
                 color: [100, 0, 0],
                 size: 4,
                 reference: false
             };
         }),
-        events = _.fill(Array(100), 0).map(function () {
+        events = _.fill(Array(1), 0).map(function () {
             var pos = [Math.random() * 40 - 20, Math.random() * 40 - 20, Math.random() * 60 - 10];
             return {
                 absolutePosition: pos,
@@ -86,6 +89,8 @@ _.noConflict();
         objects = [player].concat(others),
         objectCount = objects.length;
 
+    gui.add(player.velocity, '0', -1, 1);
+    gui.add(player.velocity, '1', -1, 1);
     var thrustSign = [0, 0];
     window.onkeydown = function (e) {
         if (timerEnded) {
@@ -179,18 +184,39 @@ _.noConflict();
 
             objects.map(function(object){
                 if(!object.reference) {
-                    // var relativeVelocityX = referenceFrame.velocity[0] - object.velocity[0],
-                    //     relativeVelocityY = referenceFrame.velocity[1] - object.velocity[1],
-                    //     relativeVelocity = Math.sqrt(relativeVelocityX*relativeVelocityX + relativeVelocityY*relativeVelocityY);
-                    // var lorentzBoost = options.useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
-                    var lorentzBoost = 1;
-                    object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
-                    object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
-                    object.properTime = timeElapsed;
-                    object.relativePosition = [
-                        lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
-                        lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
-                    ];
+                    if(options.useLorentzBoost){
+                        var vFX = referenceFrame.velocity[0],
+                            vFY = referenceFrame.velocity[1],
+                            tF = referenceFrame.properTime,
+                            xF = referenceFrame.absolutePosition[0],
+                            yF = referenceFrame.absolutePosition[1],
+                            vX = object.velocity[0],
+                            vY = object.velocity[1],
+                            t0 = object.properTime,
+                            x0 = object.absolutePosition[0],
+                            y0 = object.absolutePosition[1],
+                            t = (vX*vFX*(t0 - x0/vX) + vY*vFY*(t0-y0/vY) - (tF - vFX*xF - vFY*yF)) / (vX*vFX + vY*vFY - 1),
+                            x = vX*(t - (t0 - x0/vX)),
+                            y = vY*(t - (t0 - y0/vY));
+
+                        console.log(x,y,t);
+                        object.absolutePosition = [x,y];
+                        object.properTime = t;
+                        object.relativePosition = [
+                            x,y
+                        ];
+                    } else {
+                        object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
+                        object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
+                        object.properTime = timeElapsed;
+
+                        object.relativePosition = [
+                            (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
+                            (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
+                        ];
+                    
+                    }
+                    
                 }
             });
 
@@ -203,12 +229,17 @@ _.noConflict();
                 if (options.useLorentzBoost) {
                     var x = event.relativePosition[0],
                         y = event.relativePosition[1],
-                        t = event.relativePosition[2]
+                        t = event.relativePosition[2],
+                        xF = referenceFrame.absolutePosition[0],
+                        yF = referenceFrame.absolutePosition[1],
+                        xPrime = -beta * gamma * cosTheta * t + (gamma * cos2Theta + sin2Theta) * x + (gamma - 1) * sinTheta * cosTheta * y,
+                        yPrime = -beta * gamma * sinTheta * t + (gamma * sin2Theta + cos2Theta) * y + (gamma - 1) * sinTheta * cosTheta * x,
+                        tPrime = gamma * t + -gamma * beta * cosTheta * x + -gamma * beta * sinTheta * y;
 
                     event.relativePosition = [
-                        -beta * gamma * cosTheta * t + (gamma * cos2Theta + sin2Theta) * x + (gamma - 1) * sinTheta * cosTheta * y,
-                        -beta * gamma * sinTheta * t + (gamma * sin2Theta + cos2Theta) * y + (gamma - 1) * sinTheta * cosTheta * x,
-                        gamma * t + -gamma * beta * cosTheta * x + -gamma * beta * sinTheta * y
+                        xPrime,
+                        yPrime,
+                        tPrime
                     ];
                 }
             });
@@ -225,10 +256,10 @@ _.noConflict();
 
             objects.map(function (object) {
                 events.push({
-                    absolutePosition: [object.absolutePosition[0], object.absolutePosition[1], timeElapsed],
+                    absolutePosition: [object.absolutePosition[0], object.absolutePosition[1], object.properTime],
                     relativePosition: [0, 0, 0],
                     color: object.color,
-                    size: object.size
+                    size: object.size-2
                 });
             });
 
