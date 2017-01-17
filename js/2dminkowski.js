@@ -58,7 +58,7 @@ _.noConflict();
         relativePosition: [0, 0],
         mass: 100,
         thrust: 5,
-        velocity: [0.5, 0],
+        velocity: [0.25, 0.25],
         color: [0, 0, 255],
         size: 5,
         reference: options.useRelativity
@@ -68,7 +68,7 @@ _.noConflict();
             return {
                 absolutePosition: pos,
                 relativePosition: pos,
-                velocity: [0, 0.5],
+                velocity: [0.000001, 0.5],
                 color: [100, 0, 0],
                 size: 4,
                 reference: false
@@ -183,12 +183,14 @@ _.noConflict();
                     //     relativeVelocityY = referenceFrame.velocity[1] - object.velocity[1],
                     //     relativeVelocity = Math.sqrt(relativeVelocityX*relativeVelocityX + relativeVelocityY*relativeVelocityY);
                     // var lorentzBoost = options.useLorentzBoost ? Math.sqrt(1 - relativeVelocity*relativeVelocity) : 1;
+                    var lorentzBoost = 1;
                     object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
                     object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
-                    // object.relativePosition = [
-                    //     lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
-                    //     lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
-                    // ];
+                    object.properTime = timeElapsed;
+                    object.relativePosition = [
+                        lorentzBoost * (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
+                        lorentzBoost * (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
+                    ];
                 }
             });
 
@@ -405,6 +407,66 @@ _.noConflict();
                 colors: '#eventColors',
                 size: 10
             });
+
+        
+
+        view.area({
+            channels: 3,
+            width: 10,
+            height: 10,
+            expr: function (emit, x, y) {
+                if(options.debugSR) {
+                    var t = (x*player.velocity[0]) + (y*player.velocity[1]) + (player.properTime - (player.velocity[0]*player.absolutePosition[0]) - (player.velocity[1]*player.absolutePosition[1]));
+                    emit(x, t, -y);
+                }
+            }
+        }).surface({
+            color: 0x0000FF,
+            opacity: 0.5
+
+        })
+
+        view.interval({
+            channels: 3,
+            width: 10,
+            expr: function (emit, t) {
+                if(options.debugSR) {
+                    var object = objects[1];
+                    var x = object.velocity[0]*(t - (object.properTime - object.absolutePosition[0]/object.velocity[0]));
+                    var y = object.velocity[1]*(t - (object.properTime - object.absolutePosition[1]/object.velocity[1]));
+                    emit(x, t, -y);
+                }
+            }
+        }).line({
+            color: 0xFF0000,
+        });
+
+        view.array({
+            channels: 3,
+            width: 1,
+            expr: function (emit) {
+                if(options.debugSR) {
+                    var obj = objects[1],
+                        vFX = player.velocity[0],
+                        vFY = player.velocity[1],
+                        tF = player.properTime,
+                        xF = player.absolutePosition[0],
+                        yF = player.absolutePosition[1],
+                        vX = obj.velocity[0],
+                        vY = obj.velocity[1],
+                        t0 = obj.properTime,
+                        x0 = obj.absolutePosition[0],
+                        y0 = obj.absolutePosition[1],
+                        t = (vX*vFX*(t0 - x0/vX) + vY*vFY*(t0-y0/vY) - (tF - vFX*xF - vFY*yF)) / (vX*vFX + vY*vFY - 1),
+                        x = vX*(t - (t0 - x0/vX)),
+                        y = vY*(t - (t0 - y0/vY));
+                    emit(x,t, -y);
+                }
+            }
+        }).point({
+            color: 0x00FF00,
+            size: 20
+        })
 
         view.area({
             width: 32,

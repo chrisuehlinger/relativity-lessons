@@ -31,7 +31,7 @@ _.noConflict();
         stRadius: 10,
         clipEvents: false,
         useRelativity: true,
-        debugSR: false,
+        debugSR: true,
         useLorentzTransform: false,
         useBlackHoles: false,
         showLightCones: true
@@ -644,10 +644,11 @@ _.noConflict();
         view.interval({
             channels: 2,
             width: 10,
-            expr: function (emit, x) {
+            expr: function (emit, t) {
                 if(options.debugSR) {
                     var object = objects[1];
-                    var t = (x/object.velocity) + (object.properTime - (object.absolutePosition/object.velocity));
+                    var x = object.velocity*(t - (object.properTime - object.absolutePosition/object.velocity));
+                    // var t = (x/object.velocity) + (object.properTime - (object.absolutePosition/object.velocity));
                     emit(x,t);
                 }
             }
