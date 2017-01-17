@@ -33,7 +33,7 @@ _.noConflict();
         useRelativity: true,
         debugSR: false,
         useLorentzTransform: true,
-        useBlackHoles: false,
+        useBlackHoles: true,
         showLightCones: true
     };
 
@@ -308,18 +308,18 @@ _.noConflict();
             objects.map(function (object, i) {
                 if (!object.reference) {
                     var v = object.velocity;
-                    // if (options.useBlackHoles) {
-                    //     // Calculated using Gullstrand-Painlevé coordinates
-                    //     var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
-                    //     var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
-                    //     var t = r > 0 ? sign * (1 - blackHole.radius / r) * Math.sqrt(blackHole.radius / r) : 0;
-                    //     v = (v + 1) * (1 - t / 2) - 1;
-                    //     console.log(sign, _.round(t, 3), _.round(v, 3));
-                    //     if (r < 0.1) {
-                    //         objects.splice(objects.indexOf(object), 1);
-                    //         return;
-                    //     }
-                    // }
+                    if (options.useBlackHoles) {
+                        // Calculated using Gullstrand-Painlevé coordinates
+                        var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
+                        var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
+                        var t = r > 0 ? sign * (1 - blackHole.radius / r) * Math.sqrt(blackHole.radius / r) : 0;
+                        v = (v + 1) * (1 - t / 2) - 1;
+                        // console.log(sign, _.round(t, 3), _.round(v, 3));
+                        if (r < 0.1) {
+                            objects.splice(objects.indexOf(object), 1);
+                            return;
+                        }
+                    }
 
 
                     object.absolutePosition += v * timeSinceLastFrame;
@@ -454,8 +454,8 @@ _.noConflict();
     }
 
     function initDiagram() {
-        var warpShader = mathbox.shader({
-            code: '#blackhole-curvature',
+        var lorentzShader = mathbox.shader({
+            code: '#lorentz-transform',
         }, {
                 vFrame: function(){
                     return player.velocity;
@@ -466,11 +466,16 @@ _.noConflict();
                 xFrame: function(){
                     return player.absolutePosition;
                 },
-                useBlackHoles: function () {
-                    return options.useBlackHoles ? 1 : 0;
-                },
                 debugSR: function () {
                     return options.debugSR ? 1 : 0;
+                },
+
+            });
+        var blackHoleShader = mathbox.shader({
+            code: '#blackhole-curvature',
+        }, {
+                useBlackHoles: function () {
+                    return options.useBlackHoles ? 1 : 0;
                 },
                 singularity: function (t) {
                     //   console.log(blackHole.relativePosition);
@@ -494,45 +499,30 @@ _.noConflict();
             .scale({
                 divide: 1,
             })
-            .ticks({
-                classes: ['foo', 'bar'],
-                width: 2
-            })
-            .axis({
-                detail: 64,
-            })
-            .axis({
-                axis: 2,
-                detail: 64
-            })
-            .grid({
-                divideX: 2 * options.stRadius,
-                detailX: 256,
-                divideY: 2 * options.stRadius,
-                detailY: 256,
-                width: 1,
-                opacity: 0.5,
-                zBias: -5,
-            })
             .vertex({
-                pass: 'data'
+                pass:'data',
+                shader:blackHoleShader
             })
-            .axis({
-                detail: 64,
-            })
-            .axis({
-                axis: 2,
-                detail: 64
-            })
-            .grid({
-                divideX: 2 * options.stRadius,
-                detailX: 256,
-                divideY: 2 * options.stRadius,
-                detailY: 256,
-                width: 1,
-                opacity: 0.5,
-                zBias: -5,
-            })
+                .ticks({
+                    classes: ['foo', 'bar'],
+                    width: 2
+                })
+                .axis({
+                    detail: 64,
+                })
+                .axis({
+                    axis: 2,
+                    detail: 64
+                })
+                .grid({
+                    divideX: 2 * options.stRadius,
+                    detailX: 256,
+                    divideY: 2 * options.stRadius,
+                    detailY: 256,
+                    width: 1,
+                    opacity: 0.5,
+                    zBias: -5,
+                })
             .end()
             .array({
                 id: 'currentPosition',
@@ -631,6 +621,35 @@ _.noConflict();
             color: 0,
             size: 10
         })
+
+        view
+        .group({
+            id:'srDebugGrid'
+        }, {
+            visible: function(){
+                return options.debugSR;
+            }
+        })
+            .vertex({
+                pass: 'data',
+                shader: lorentzShader
+            })
+            .axis({
+                detail: 64,
+            })
+            .axis({
+                axis: 2,
+                detail: 64
+            })
+            .grid({
+                divideX: 2 * options.stRadius,
+                detailX: 256,
+                divideY: 2 * options.stRadius,
+                detailY: 256,
+                width: 1,
+                opacity: 0.5,
+                zBias: -5,
+            });
 
         view.interval({
             channels: 2,
