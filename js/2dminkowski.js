@@ -30,7 +30,7 @@ _.noConflict();
         clipEvents: false,
         debugSR: false,
         useRelativity: true,
-        useLorentzBoost: true,
+        useLorentzBoost: false,
         useBlackHoles: true,
         showLightCones: false
     };
@@ -96,6 +96,10 @@ _.noConflict();
         if (timerEnded) {
             return;
         }
+        
+        if(e.keyCode >= 48 && e.keyCode < 59) {
+            changeFrame(e.keyCode-48);
+        }
 
         switch (e.keyCode) {
             case 65:
@@ -119,6 +123,11 @@ _.noConflict();
 
     window.onkeyup = function () {
         thrustSign = [0, 0];
+    }
+
+    function changeFrame(index){
+        objects.map(function(object) { object.reference = false; });
+        objects[index].reference = true;
     }
 
     initDiagram(objectCount);
@@ -149,9 +158,9 @@ _.noConflict();
             }
             var beta = Math.sqrt(referenceFrame.velocity[0] * referenceFrame.velocity[0] + referenceFrame.velocity[1] * referenceFrame.velocity[1]);
             var gamma = Math.sqrt(1 - beta * beta);
-            var relThrust = referenceFrame.thrust / (gamma * referenceFrame.mass);
-            referenceFrame.velocity[0] += thrustSign[0] * relThrust * timeSinceLastFrame;
-            referenceFrame.velocity[1] += thrustSign[1] * relThrust * timeSinceLastFrame;
+            var relThrust = player.thrust / (gamma * player.mass);
+            player.velocity[0] += thrustSign[0] * relThrust * timeSinceLastFrame;
+            player.velocity[1] += thrustSign[1] * relThrust * timeSinceLastFrame;
             beta = Math.sqrt(referenceFrame.velocity[0] * referenceFrame.velocity[0] + referenceFrame.velocity[1] * referenceFrame.velocity[1]);
             var theta = Math.atan2(referenceFrame.velocity[1], referenceFrame.velocity[0]),
                 sinTheta = Math.sin(theta),
@@ -180,6 +189,7 @@ _.noConflict();
             referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
             referenceFrame.properTime = timeElapsed;
             referenceFrame.currentTime = 0;
+            referenceFrame.relativePosition = [0,0];
 
             objects.map(function(object){
                 if(!object.reference) {
@@ -221,7 +231,7 @@ _.noConflict();
                             (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
                             (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
                         ];
-                        object.currentTime = timeElapsed;
+                        object.currentTime = 0;
                     
                     }
                     
@@ -229,10 +239,11 @@ _.noConflict();
             });
 
             events.map(function (event) {
+                var time = event.absolutePosition[2] - timeElapsed;
                 event.relativePosition = [
-                    event.absolutePosition[0] - referenceFrame.absolutePosition[0],
-                    event.absolutePosition[1] - referenceFrame.absolutePosition[1],
-                    event.absolutePosition[2] - timeElapsed
+                    event.absolutePosition[0] - referenceFrame.absolutePosition[0] - referenceFrame.velocity[0]*time,
+                    event.absolutePosition[1] - referenceFrame.absolutePosition[1] - referenceFrame.velocity[1]*time,
+                    time
                 ];
                 if (options.useLorentzBoost) {
                     var x = event.relativePosition[0],
@@ -258,9 +269,6 @@ _.noConflict();
 
         setTimeout(updateEvents, (1/options.updatesPerSecond) * 1000);
         function updateEvents() {
-            var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
-            timeElapsed += timeSinceLastFrame;
-            lastFrameTime = Date.now();
 
             objects.map(function (object) {
                 events.push({
@@ -271,6 +279,7 @@ _.noConflict();
                 });
             });
 
+            clearTimeout(updateFrame);
             update();
             setTimeout(updateEvents, (1/options.updatesPerSecond) * 1000);
         }
