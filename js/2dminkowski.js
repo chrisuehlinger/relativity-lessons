@@ -32,7 +32,7 @@ _.noConflict();
         useRelativity: true,
         useLorentzBoost: true,
         useBlackHoles: true,
-        showLightCones: false
+        showLightCones: true
     };
 
     var gui = new dat.GUI();
@@ -522,16 +522,20 @@ _.noConflict();
             width: 32,
             height: 32,
             channels: 3,
-            items: 2,
+            items: 1,
             live: false,
-            expr: function(emit,x,y,i,j){
-                var z = Math.sqrt(x*x+y*y);
-                emit(x,z,-y);
-                emit(x,-z,-y);
+            expr: function(emit,t,theta){
+                theta = Math.PI*theta/10;
+                var x = t*Math.cos(theta);
+                var y = t*Math.sin(theta);
+                emit(x,t,-y);
             }
         }).surface({
             color: [100, 0, 100],
-            opacity: 0.25,
+            opacity: 0.5,
+            lineX: true,
+            lineY: true,
+            fill: false
         }, {
             visible: function () {
                 return options.showLightCones;
