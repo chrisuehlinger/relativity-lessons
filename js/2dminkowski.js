@@ -28,7 +28,7 @@ _.noConflict();
         updatesPerSecond: 2,
         stRadius: 10,
         clipEvents: false,
-        debugSR: true,
+        debugSR: false,
         useRelativity: true,
         useLorentzBoost: true,
         useBlackHoles: true,
@@ -89,8 +89,8 @@ _.noConflict();
         objects = [player].concat(others),
         objectCount = objects.length;
 
-    gui.add(player.velocity, '0', -1, 1);
-    gui.add(player.velocity, '1', -1, 1);
+    gui.add(player.velocity, '0', -1, 1).listen();
+    gui.add(player.velocity, '1', -1, 1).listen();
     var thrustSign = [0, 0];
     window.onkeydown = function (e) {
         if (timerEnded) {
@@ -161,10 +161,8 @@ _.noConflict();
 
             if (Math.abs(beta) > 1) {
                 beta = 0.9999;
-                referenceFrame.velocity = [
-                    beta * cosTheta,
-                    beta * sinTheta
-                ];
+                referenceFrame.velocity[0] = beta * cosTheta;
+                referenceFrame.velocity[1] = beta * sinTheta;
 
                 theta = Math.atan2(referenceFrame.velocity[1], referenceFrame.velocity[0]),
                     sinTheta = Math.sin(theta),
@@ -181,6 +179,7 @@ _.noConflict();
             referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
             referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
             referenceFrame.properTime = timeElapsed;
+            referenceFrame.currentTime = 0;
 
             objects.map(function(object){
                 if(!object.reference) {
@@ -197,14 +196,22 @@ _.noConflict();
                             y0 = object.absolutePosition[1],
                             t = (vX*vFX*(t0 - x0/vX) + vY*vFY*(t0-y0/vY) - (tF - vFX*xF - vFY*yF)) / (vX*vFX + vY*vFY - 1),
                             x = vX*(t - (t0 - x0/vX)),
-                            y = vY*(t - (t0 - y0/vY));
+                            y = vY*(t - (t0 - y0/vY)),
+                            dt = t - referenceFrame.properTime,
+                            dx = x - referenceFrame.absolutePosition[0],
+                            dy = y - referenceFrame.absolutePosition[1],
+                            xPrime = -beta * gamma * cosTheta * dt + (gamma * cos2Theta + sin2Theta) * dx + (gamma - 1) * sinTheta * cosTheta * dy,
+                            yPrime = -beta * gamma * sinTheta * dt + (gamma * sin2Theta + cos2Theta) * dy + (gamma - 1) * sinTheta * cosTheta * dx,
+                            tPrime = gamma * dt + -gamma * beta * cosTheta * dx + -gamma * beta * sinTheta * dy;;
 
-                        console.log(x,y,t);
+                        // console.log(x,y,t);
                         object.absolutePosition = [x,y];
                         object.properTime = t;
                         object.relativePosition = [
-                            x,y
+                            xPrime,
+                            yPrime
                         ];
+                        object.currentTime = tPrime;
                     } else {
                         object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
                         object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
@@ -214,6 +221,7 @@ _.noConflict();
                             (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
                             (object.absolutePosition[1] - referenceFrame.absolutePosition[1])
                         ];
+                        object.currentTime = timeElapsed;
                     
                     }
                     
@@ -353,8 +361,8 @@ _.noConflict();
                 width: numItems,
                 expr: function (emit, i, t) {
                     options.debugSR
-                        ?emit(objects[i].absolutePosition[0], objects[i].properTime, -objects[i].absolutePosition[1])
-                        : emit(objects[i].relativePosition[0], 0, -objects[i].relativePosition[1]);
+                        ? emit(objects[i].absolutePosition[0], objects[i].properTime, -objects[i].absolutePosition[1])
+                        : emit(objects[i].relativePosition[0], objects[i].currentTime, -objects[i].relativePosition[1]);
                 },
                 channels: 3,
             })
@@ -432,7 +440,8 @@ _.noConflict();
                         }
                     }
                 }
-            }).point({
+            })
+            .point({
                 points: '#events',
                 // color: 0x3090FF,
                 colors: '#eventColors',
