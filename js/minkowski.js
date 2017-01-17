@@ -31,8 +31,8 @@ _.noConflict();
         stRadius: 10,
         clipEvents: false,
         useRelativity: true,
-        debugSR: true,
-        useLorentzTransform: false,
+        debugSR: false,
+        useLorentzTransform: true,
         useBlackHoles: false,
         showLightCones: true
     };
@@ -276,8 +276,8 @@ _.noConflict();
             var tFrame = referenceFrame.properTime + gamma*(timeSinceLastFrame + vFrame*0);
             var xFrame = referenceFrame.absolutePosition + gamma*(0 + vFrame*timeSinceLastFrame);
             
-            referenceFrame.absolutePosition += vFrame*timeSinceLastFrame;
-            referenceFrame.properTime += timeSinceLastFrame;
+            referenceFrame.absolutePosition += gamma*vFrame*timeSinceLastFrame;
+            referenceFrame.properTime += gamma*timeSinceLastFrame;
             referenceFrame.relativePosition = 0;
             referenceFrame.currentTime = 0;
             if (options.useLorentzTransform) {
@@ -332,8 +332,10 @@ _.noConflict();
                             t0 = object.properTime,
                             x = ((t0 - x0/v) - (tFrame - vFrame*xFrame))/(vFrame - 1/v),
                             t = x/v + (t0 - x0/v),
-                            xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime),
-                            tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
+                            dx = (x - referenceFrame.absolutePosition),
+                            dt = (t - referenceFrame.properTime),
+                            xPrime = gamma*(dx - vFrame*dt),
+                            tPrime = gamma*(dt - vFrame*dx);
 
                         object.absolutePosition = x;
                         object.properTime = t;
