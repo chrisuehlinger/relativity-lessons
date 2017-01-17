@@ -246,14 +246,15 @@ _.noConflict();
                     time
                 ];
                 if (options.useLorentzBoost) {
-                    var x = event.relativePosition[0],
-                        y = event.relativePosition[1],
-                        t = event.relativePosition[2],
-                        xF = referenceFrame.absolutePosition[0],
-                        yF = referenceFrame.absolutePosition[1],
-                        xPrime = -beta * gamma * cosTheta * t + (gamma * cos2Theta + sin2Theta) * x + (gamma - 1) * sinTheta * cosTheta * y,
-                        yPrime = -beta * gamma * sinTheta * t + (gamma * sin2Theta + cos2Theta) * y + (gamma - 1) * sinTheta * cosTheta * x,
-                        tPrime = gamma * t + -gamma * beta * cosTheta * x + -gamma * beta * sinTheta * y;
+                    var x = event.absolutePosition[0],
+                        y = event.absolutePosition[1],
+                        t = event.absolutePosition[2],
+                        dx = x - referenceFrame.absolutePosition[0],
+                        dy = y - referenceFrame.absolutePosition[1],
+                        dt = t - referenceFrame.properTime,
+                        xPrime = -beta*gamma*cosTheta*dt + (gamma*cos2Theta + sin2Theta)*dx + (gamma - 1)*sinTheta*cosTheta*dy,
+                        yPrime = -beta*gamma*sinTheta*dt + (gamma*sin2Theta + cos2Theta)*dy + (gamma - 1)*sinTheta*cosTheta*dx,
+                        tPrime = gamma*dt + -gamma*beta*cosTheta*dx + -gamma*beta*sinTheta*dy;
 
                     event.relativePosition = [
                         xPrime,

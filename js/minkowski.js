@@ -367,10 +367,12 @@ _.noConflict();
 
                 // Special Relativity
                 if (options.useLorentzTransform) {
-                    var x = event.absolutePosition[0];
-                    var t = event.absolutePosition[1];
-                    var xPrime = gamma*(x - vFrame*t) - gamma*(referenceFrame.absolutePosition - vFrame*referenceFrame.properTime);
-                    var tPrime = gamma*(t - vFrame*x) - gamma*(referenceFrame.properTime - vFrame*referenceFrame.absolutePosition);
+                    var x = event.absolutePosition[0],
+                        t = event.absolutePosition[1],
+                        dx = x - referenceFrame.absolutePosition,
+                        dt = t - referenceFrame.properTime,
+                        xPrime = gamma*(dx - vFrame*dt),
+                        tPrime = gamma*(dt - vFrame*dx);
                     event.relativePosition = [
                         xPrime,
                         tPrime
