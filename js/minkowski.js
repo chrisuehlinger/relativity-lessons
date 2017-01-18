@@ -60,7 +60,7 @@ _.noConflict();
     var player = {
         absolutePosition: 0,
         relativePosition: 0,
-        velocity: 0.5,
+        velocity: 0,
         properTime:0,
         mass: 100,
         thrust: 5,
@@ -159,8 +159,7 @@ _.noConflict();
                 color: [0, 100, 0],
                 size: 4
             };
-        })),
-        //.concat(blackHoleEvents),
+        })).concat(blackHoleEvents),
         objects = [player].concat(others),
         eventCount = events.length,
         objectCount = objects.length;
@@ -300,7 +299,8 @@ _.noConflict();
                     v = (v + 1) * (1 - t) - 1;
                     // console.log(sign, _.round(t,3), _.round(v,3));
                 }
-                referenceFrame.absolutePosition -= v * timeSinceLastFrame;
+                console.log(v);
+                referenceFrame.absolutePosition -= v*timeSinceLastFrame;
 
                 object.relativePosition = (object.absolutePosition - referenceFrame.absolutePosition);
             });
@@ -401,9 +401,15 @@ _.noConflict();
 
                 // Special Relativity
                 if (options.useLorentzTransform) {
+                    var x = event.absolutePosition[0] + v * (event.absolutePosition[1] - timeElapsed),
+                        t = event.absolutePosition[1],
+                        dx = x - referenceFrame.absolutePosition,
+                        dt = t - referenceFrame.properTime,
+                        xPrime = gamma*(dx - vFrame*dt),
+                        tPrime = gamma*(dt - vFrame*dx);
                     event.relativePosition = [
-                        gamma * (event.relativePosition[0] - referenceFrame.velocity * event.relativePosition[1]),
-                        gamma * (event.relativePosition[1] - referenceFrame.velocity * event.relativePosition[0])
+                        xPrime,
+                        tPrime
                     ];
                 }
 
