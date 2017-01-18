@@ -265,9 +265,11 @@ _.noConflict();
             }
 
             var gamma = 1/Math.sqrt(1 - player.velocity * player.velocity);
-            var relThrust = player.thrust / (gamma * player.mass);
-            player.velocity += thrustSign * relThrust * timeSinceLastFrame;
-            player.velocity = Math.max(Math.min(player.velocity, 0.99999999999999), -0.99999999999999);
+            if(thrustSign !== 0) {
+                var relThrust = player.thrust / (gamma * player.mass);
+                player.velocity += thrustSign * relThrust * timeSinceLastFrame;
+                player.velocity = Math.max(Math.min(player.velocity, 0.99999999999999), -0.99999999999999);
+            }
 
             var vFrame = referenceFrame.velocity;
             gamma = 1/Math.sqrt(1 - vFrame*vFrame);
