@@ -60,8 +60,9 @@ _.noConflict();
     var player = {
         absolutePosition: 0,
         relativePosition: 0,
-        velocity: 0.5,
-        properTime:0,
+        velocity: 0,
+        absoluteTime:0,
+        properTime: 0,
         mass: 100,
         thrust: 5,
         color: [0, 0, 255],
@@ -74,44 +75,49 @@ _.noConflict();
                 absolutePosition: pos,
                 relativePosition: pos,
                 velocity: 0.5*(i+1),
+                absoluteTime: 0,
                 properTime: 0,
                 color: [100, 0, 0],
                 size: 4,
                 reference: false
             };
         }).concat([
-            {
-                absolutePosition: -5,
-                relativePosition: -5,
-                velocity: 1,
-                properTime: 0,
-                color: [100, 0, 0],
-                size: 4,
-                reference: false
-            },
             // {
             //     absolutePosition: -5,
             //     relativePosition: -5,
-            //     velocity: 0,
+            //     velocity: 1,
+            //     absoluteTime: 0,
             //     properTime: 0,
             //     color: [100, 0, 0],
             //     size: 4,
             //     reference: false
             // },
             {
-                absolutePosition: 5,
-                relativePosition: 5,
-                velocity: 0.5,
+                absolutePosition: 0,
+                relativePosition: 0,
+                velocity: 0.000001,
+                absoluteTime: 0,
                 properTime: 0,
                 color: [100, 0, 0],
                 size: 4,
                 reference: false
             },
             // {
+            //     absolutePosition: 5,
+            //     relativePosition: 5,
+            //     velocity: 0.5,
+            //     absoluteTime: 0,
+            //     properTime: 0,
+            //     color: [100, 0, 0],
+            //     size: 4,
+            //     reference: false
+            // },
+            // {
             //     absolutePosition: 10,
             //     relativePosition: 10,
             //     velocity: -0.5,
-            //     properTime: 0,
+            //     absoluteTime: 0,
+                // properTime: 0,
             //     color: [100, 0, 0],
             //     size: 4,
             //     reference: false
@@ -121,6 +127,8 @@ _.noConflict();
             absolutePosition: -20,
             relativePosition: -20,
             velocity: 0,
+            absoluteTime: 0,
+            properTime: 0,
             radius: 2,
             color: [0, 0, 0],
             size: 4
@@ -159,8 +167,7 @@ _.noConflict();
                 color: [0, 100, 0],
                 size: 4
             };
-        })),
-        //.concat(blackHoleEvents),
+        })).concat(blackHoleEvents),
         objects = [player].concat(others),
         eventCount = events.length,
         objectCount = objects.length;
@@ -237,6 +244,26 @@ _.noConflict();
         objects[index].reference = true;
     }
 
+    function displayTime(t){
+        var absT = Math.abs(t);
+        if(absT === Infinity){
+            t = '\u221e';
+        } else if (absT > 31557600) {
+            t = _.floor(t/31557600) + 'year' +  _.floor((t%31557600)/86400) + 'day';
+        } else if (absT > 86400) {
+            t = _.floor(t/86400) + 'day' +  _.floor((t%86400)/3600) + 'hr';
+        } else if (absT > 3600) {
+            t = _.floor(t/3600) + 'hr' +  _.floor((t%3600)/60) + 'm';
+        } else if (absT > 60) {
+            t = _.floor(t/60) + 'm' +  _.floor(t%60) + 's';
+        } else if (absT > 1) {
+            t = _.floor(t) + 's';
+        } else {
+            t = _.round(t,2) + 's';
+        }
+        return t;
+    }
+
     function initSimulation() {
         var lastFrameTime = startTime = Date.now();
         var updateFrame = requestAnimationFrame(update);
@@ -262,33 +289,37 @@ _.noConflict();
                 velocity: 0,
                 thrust: 0,
                 mass: 1,
-                properTime: timeElapsed
+                absoluteTime: timeElapsed,
+                properTime: timeElapsed,
             }
 
             var gamma = 1/Math.sqrt(1 - player.velocity * player.velocity);
-            var relThrust = player.thrust / (gamma * player.mass);
-            player.velocity += thrustSign * relThrust * timeSinceLastFrame;
-            player.velocity = Math.max(Math.min(player.velocity, 0.99999999999999), -0.99999999999999);
+            if(thrustSign !== 0) {
+                var relThrust = player.thrust / (gamma * player.mass);
+                player.velocity += thrustSign * relThrust * timeSinceLastFrame;
+                player.velocity = Math.max(Math.min(player.velocity, 0.999999999999), -0.999999999999);
+            }
 
             var vFrame = referenceFrame.velocity;
             gamma = 1/Math.sqrt(1 - vFrame*vFrame);
             var tau = timeElapsed;
-            var tFrame = referenceFrame.properTime + gamma*(timeSinceLastFrame + vFrame*0);
+            var tFrame = referenceFrame.absoluteTime + gamma*(timeSinceLastFrame + vFrame*0);
             var xFrame = referenceFrame.absolutePosition + gamma*(0 + vFrame*timeSinceLastFrame);
             
             referenceFrame.absolutePosition += gamma*vFrame*timeSinceLastFrame;
-            referenceFrame.properTime += gamma*timeSinceLastFrame;
+            referenceFrame.absoluteTime += gamma*timeSinceLastFrame;
+            referenceFrame.properTime += timeSinceLastFrame;
             referenceFrame.relativePosition = 0;
             referenceFrame.currentTime = 0;
             if (options.useLorentzTransform) {
                 referenceFrame.absolutePosition = xFrame;
-                referenceFrame.properTime = tFrame;
+                referenceFrame.absoluteTime = tFrame;
             }
 
-            $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 3) + 'c');
+            $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 12) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
-            $tauDisplay.text('tau = ' + _.round(tau, 3));
-            $tDisplay.text('t = ' + _.round(tFrame, 3));
+            $tauDisplay.text('tau = ' + displayTime(tau));
+            $tDisplay.text('t = ' + displayTime(tFrame));
 
             blackHoles.map(function (object) {
                 var v = object.velocity;
@@ -300,7 +331,8 @@ _.noConflict();
                     v = (v + 1) * (1 - t) - 1;
                     // console.log(sign, _.round(t,3), _.round(v,3));
                 }
-                referenceFrame.absolutePosition -= v * timeSinceLastFrame;
+                // console.log(v);
+                referenceFrame.absolutePosition -= v*timeSinceLastFrame;
 
                 object.relativePosition = (object.absolutePosition - referenceFrame.absolutePosition);
             });
@@ -308,40 +340,46 @@ _.noConflict();
             objects.map(function (object, i) {
                 if (!object.reference) {
                     var v = object.velocity;
-                    // if (options.useBlackHoles) {
-                    //     // Calculated using Gullstrand-Painlevé coordinates
-                    //     var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
-                    //     var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
-                    //     var t = r > 0 ? sign * (1 - blackHole.radius / r) * Math.sqrt(blackHole.radius / r) : 0;
-                    //     v = (v + 1) * (1 - t / 2) - 1;
-                    //     console.log(sign, _.round(t, 3), _.round(v, 3));
-                    //     if (r < 0.1) {
-                    //         objects.splice(objects.indexOf(object), 1);
-                    //         return;
-                    //     }
-                    // }
+                    if (options.useBlackHoles) {
+                        // Calculated using Gullstrand-Painlevé coordinates
+                        var r = Math.abs(object.absolutePosition - blackHole.absolutePosition);
+                        var sign = Math.sign(object.absolutePosition - blackHole.absolutePosition);
+                        var t = r > 0 ? sign * (1 - blackHole.radius / r) * Math.sqrt(blackHole.radius / r) : 0;
+                        v = (v + 1) * (1 - t / 2) - 1;
+                        // console.log(sign, _.round(t, 3), _.round(v, 3));
+                        if (r < 0.1) {
+                            objects.splice(objects.indexOf(object), 1);
+                            return;
+                        }
+                    }
 
 
                     object.absolutePosition += v * timeSinceLastFrame;
-                    object.properTime += timeSinceLastFrame;
+                    object.absoluteTime += timeSinceLastFrame;
                     object.relativePosition = (object.absolutePosition - referenceFrame.absolutePosition);
                     object.currentTime = 0;
+                    object.properTime = timeElapsed;
 
                     if (options.useLorentzTransform) {
                         var x0 = object.absolutePosition,
-                            t0 = object.properTime,
+                            t0 = object.absoluteTime,
                             x = ((t0 - x0/v) - (tFrame - vFrame*xFrame))/(vFrame - 1/v),
                             t = x/v + (t0 - x0/v),
                             dx = (x - referenceFrame.absolutePosition),
-                            dt = (t - referenceFrame.properTime),
+                            dt = (t - referenceFrame.absoluteTime),
                             xPrime = gamma*(dx - vFrame*dt),
-                            tPrime = gamma*(dt - vFrame*dx);
+                            tPrime = gamma*(dt - vFrame*dx),
+                            objGamma = 1/Math.sqrt(1-v*v),
+                            objTau = objGamma*(t - v*x);
 
                         object.absolutePosition = x;
-                        object.properTime = t;
+                        object.absoluteTime = t;
 
                         object.relativePosition = xPrime;
                         object.currentTime = tPrime;
+
+                        object.properTime = objTau;
+                        // console.log(x0, v, x0/v)
                     }
                 }
             });
@@ -370,7 +408,7 @@ _.noConflict();
                     var x = event.absolutePosition[0],
                         t = event.absolutePosition[1],
                         dx = x - referenceFrame.absolutePosition,
-                        dt = t - referenceFrame.properTime,
+                        dt = t - referenceFrame.absoluteTime,
                         xPrime = gamma*(dx - vFrame*dt),
                         tPrime = gamma*(dt - vFrame*dx);
                     event.relativePosition = [
@@ -401,9 +439,15 @@ _.noConflict();
 
                 // Special Relativity
                 if (options.useLorentzTransform) {
+                    var x = event.absolutePosition[0] + v * (event.absolutePosition[1] - timeElapsed),
+                        t = event.absolutePosition[1],
+                        dx = x - referenceFrame.absolutePosition,
+                        dt = t - referenceFrame.absoluteTime,
+                        xPrime = gamma*(dx - vFrame*dt),
+                        tPrime = gamma*(dt - vFrame*dx);
                     event.relativePosition = [
-                        gamma * (event.relativePosition[0] - referenceFrame.velocity * event.relativePosition[1]),
-                        gamma * (event.relativePosition[1] - referenceFrame.velocity * event.relativePosition[0])
+                        xPrime,
+                        tPrime
                     ];
                 }
 
@@ -426,19 +470,12 @@ _.noConflict();
 
             objects.map(function (object, i) {
                 events.push({
-                    absolutePosition: [object.absolutePosition, object.properTime],
+                    absolutePosition: [object.absolutePosition, object.absoluteTime],
                     relativePosition: [0, 0],
                     velocity: object.velocity,
                     color: object.color,
                     size: object.size
                 });
-                // events.push({
-                //     absolutePosition: [object.absolutePosition, object.properTime],
-                //     relativePosition: [0, 0],
-                //     velocity: object.velocity,
-                //     color: [0,0,0],
-                //     size: object.size
-                // });
             });
 
             cancelAnimationFrame(updateFrame);
@@ -454,23 +491,28 @@ _.noConflict();
     }
 
     function initDiagram() {
-        var warpShader = mathbox.shader({
-            code: '#blackhole-curvature',
+        var lorentzShader = mathbox.shader({
+            code: '#lorentz-transform',
         }, {
                 vFrame: function(){
                     return player.velocity;
                 },
                 tFrame: function(){
-                    return player.properTime;
+                    return player.absoluteTime;
                 },
                 xFrame: function(){
                     return player.absolutePosition;
                 },
-                useBlackHoles: function () {
-                    return options.useBlackHoles ? 1 : 0;
-                },
                 debugSR: function () {
                     return options.debugSR ? 1 : 0;
+                },
+
+            });
+        var blackHoleShader = mathbox.shader({
+            code: '#blackhole-curvature',
+        }, {
+                useBlackHoles: function () {
+                    return options.useBlackHoles ? 1 : 0;
                 },
                 singularity: function (t) {
                     //   console.log(blackHole.relativePosition);
@@ -494,53 +536,40 @@ _.noConflict();
             .scale({
                 divide: 1,
             })
-            .ticks({
-                classes: ['foo', 'bar'],
-                width: 2
-            })
-            .axis({
-                detail: 64,
-            })
-            .axis({
-                axis: 2,
-                detail: 64
-            })
-            .grid({
-                divideX: 2 * options.stRadius,
-                detailX: 256,
-                divideY: 2 * options.stRadius,
-                detailY: 256,
-                width: 1,
-                opacity: 0.5,
-                zBias: -5,
-            })
             .vertex({
-                pass: 'data'
+                pass:'data',
+                shader:blackHoleShader
             })
-            .axis({
-                detail: 64,
-            })
-            .axis({
-                axis: 2,
-                detail: 64
-            })
-            .grid({
-                divideX: 2 * options.stRadius,
-                detailX: 256,
-                divideY: 2 * options.stRadius,
-                detailY: 256,
-                width: 1,
-                opacity: 0.5,
-                zBias: -5,
-            })
-            .end()
+                .ticks({
+                    classes: ['foo', 'bar'],
+                    width: 2
+                })
+                .axis({
+                    detail: 64,
+                })
+                .axis({
+                    axis: 2,
+                    detail: 64
+                })
+                .grid({
+                    divideX: 2 * options.stRadius,
+                    detailX: 256,
+                    divideY: 2 * options.stRadius,
+                    detailY: 256,
+                    width: 1,
+                    opacity: 0.5,
+                    zBias: -5,
+                })
+            .end();
+        
+        view
             .array({
                 id: 'currentPosition',
                 width: 50,
                 expr: function (emit, i, t) {
                     if (i < objects.length) {
                         options.debugSR 
-                            ? emit(objects[i].absolutePosition, objects[i].properTime)
+                            ? emit(objects[i].absolutePosition, objects[i].absoluteTime)
                             : emit(objects[i].relativePosition, objects[i].currentTime);
                     }
                 },
@@ -573,6 +602,27 @@ _.noConflict();
                 colors: '#objectColors',
                 // size: 10
                 sizes: "#objectSizes"
+            })
+            .text({
+                font: 'Helvetica',
+                width:  50,
+                height: 5,
+                depth:  2,
+                expr: function (emit, i) {
+                    if(i < objects.length) {
+                        emit(displayTime(objects[i].properTime));
+                    }
+                },
+            })
+            .label({
+                color: '#000000',
+                points: '#currentPosition',
+                snap: false,
+                outline: 2,
+                size: 20,
+                offset: [32, 32],
+                depth: .5,
+                zIndex: 1,
             });
 
         view.array({
@@ -632,12 +682,41 @@ _.noConflict();
             size: 10
         })
 
+        view
+        .group({
+            id:'srDebugGrid'
+        }, {
+            visible: function(){
+                return options.debugSR;
+            }
+        })
+            .vertex({
+                pass: 'data',
+                shader: lorentzShader
+            })
+            .axis({
+                detail: 64,
+            })
+            .axis({
+                axis: 2,
+                detail: 64
+            })
+            .grid({
+                divideX: 2 * options.stRadius,
+                detailX: 256,
+                divideY: 2 * options.stRadius,
+                detailY: 256,
+                width: 1,
+                opacity: 0.5,
+                zBias: -5,
+            });
+
         view.interval({
             channels: 2,
             width: 10,
             expr: function (emit, x) {
                 if(options.debugSR) {
-                    var t = (x*player.velocity) + (player.properTime - (player.velocity*player.absolutePosition));
+                    var t = (x*player.velocity) + (player.absoluteTime - (player.velocity*player.absolutePosition));
                     emit(x,t);
                 }
             }
@@ -651,8 +730,8 @@ _.noConflict();
             expr: function (emit, t) {
                 if(options.debugSR) {
                     var object = objects[1];
-                    var x = object.velocity*(t - (object.properTime - object.absolutePosition/object.velocity));
-                    // var t = (x/object.velocity) + (object.properTime - (object.absolutePosition/object.velocity));
+                    var x = object.velocity*(t - (object.absoluteTime - object.absolutePosition/object.velocity));
+                    // var t = (x/object.velocity) + (object.absoluteTime - (object.absolutePosition/object.velocity));
                     emit(x,t);
                 }
             }
@@ -667,10 +746,10 @@ _.noConflict();
                 if(options.debugSR) {
                     var obj = objects[1],
                         vF = player.velocity,
-                        tF = player.properTime,
+                        tF = player.absoluteTime,
                         xF = player.absolutePosition,
                         v = obj.velocity,
-                        t0 = obj.properTime,
+                        t0 = obj.absoluteTime,
                         x0 = obj.absolutePosition,
                         x = ((t0 - x0/v) - (tF - vF*xF))/(vF - 1/v),
                         t = x/v + (t0 - x0/v);
