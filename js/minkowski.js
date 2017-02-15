@@ -40,7 +40,7 @@ _.noConflict();
     gui.add(options, 'useLorentzTransform');
     gui.add(options, 'useBlackHoles');
     gui.add(options, 'showLightCones');
-    // gui.close();
+    gui.close();
 
 
     var timerStarted = false,
@@ -125,7 +125,7 @@ _.noConflict();
         },
         blackHoles = [blackHole],
         bhmm = -10
-    blackHoleEvents = _.fill(Array(300), 0).map(function (zero, i) {
+    blackHoleEvents = _.fill(Array(options.useBlackHoles ? 300 : 0), 0).map(function (zero, i) {
         var sign = i % 3 == 0 ? 0 : i % 3 == 1 ? 1 : -1;
         var pos = [blackHole.absolutePosition + sign * blackHole.radius, bhmm];
         if (sign < 0) bhmm++;
@@ -179,7 +179,7 @@ _.noConflict();
         initSimulation();
     }, 1000);
 
-    var thrustSign = 0;
+    var thrustSign = 1;
     window.onkeydown = function (e) {
         if (timerEnded) {
             return;
@@ -229,9 +229,47 @@ _.noConflict();
         thrustSign = 0;
     }
 
+
+    var transitionDuration = 1000,
+        inTransition = false,
+        transitionFrame,
+        transitionAF,
+        transitionEndTimeout;
     function changeFrame(index){
+        var startFrame = _.cloneDeep(objects.filter(function (obj) { return obj.reference; })[0] || {
+            absolutePosition: 0,
+            velocity: 0,
+            absoluteTime: timeElapsed,
+            properTime: timeElapsed,
+        }),
+        endFrame = _.cloneDeep(objects[index]),
+        transitionStartTime = Date.now();
+
+        if(inTransition){
+            cancelAnimationFrame(transitionAF);
+            clearTimeout(transitionEndTimeout);
+            startFrame = transitionFrame;
+        }
+        inTransition = true;
+
         objects.map(function(object) { object.reference = false; });
-        objects[index].reference = true;
+
+        (function transition(){
+            var t = Math.min(1, (Date.now() - transitionStartTime) / transitionDuration);
+            transitionFrame = {
+                absolutePosition: startFrame.absolutePosition + t*(endFrame.absolutePosition - startFrame.absolutePosition),
+                velocity: startFrame.velocity + t*(endFrame.velocity-startFrame.velocity),
+                absoluteTime: startFrame.absoluteTime + t*(Math.max(startFrame.absoluteTime, endFrame.absoluteTime) - startFrame.absoluteTime),
+            };
+            transitionAF = requestAnimationFrame(transition);
+        })()
+
+        transitionEndTimeout = setTimeout(function(){
+            cancelAnimationFrame(transitionAF);
+            objects[index].reference = true;
+            inTransition = false;
+        }, transitionDuration);
+        
     }
 
     function displayTime(t){
@@ -274,14 +312,14 @@ _.noConflict();
             timeElapsed += timeSinceLastFrame;
             lastFrameTime = Date.now();
 
-            var referenceFrame = objects.filter(function (obj) { return obj.reference; })[0] || {
+            var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
                 absolutePosition: 0,
                 velocity: 0,
                 thrust: 0,
                 mass: 1,
                 absoluteTime: timeElapsed,
                 properTime: timeElapsed,
-            }
+            });
 
             var gamma = 1/Math.sqrt(1 - player.velocity * player.velocity);
             if(thrustSign !== 0) {
@@ -308,7 +346,7 @@ _.noConflict();
 
             $vDisplay.text('v = ' + _.round(referenceFrame.velocity, 12) + 'c');
             $xDisplay.text('x = ' + _.round(referenceFrame.absolutePosition, 3));
-            $tauDisplay.text('tau = ' + displayTime(tau));
+            $tauDisplay.text('tau = ' + displayTime(referenceFrame.properTime));
             $tDisplay.text('t = ' + displayTime(tFrame));
 
             blackHoles.map(function (object) {
@@ -485,13 +523,37 @@ _.noConflict();
             code: '#lorentz-transform',
         }, {
                 vFrame: function(){
-                    return player.velocity;
+                    var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
+                        absolutePosition: 0,
+                        velocity: 0,
+                        thrust: 0,
+                        mass: 1,
+                        absoluteTime: timeElapsed,
+                        properTime: timeElapsed,
+                    });
+                    return referenceFrame.velocity;
                 },
                 tFrame: function(){
-                    return player.absoluteTime;
+                    var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
+                        absolutePosition: 0,
+                        velocity: 0,
+                        thrust: 0,
+                        mass: 1,
+                        absoluteTime: timeElapsed,
+                        properTime: timeElapsed,
+                    });
+                    return referenceFrame.absoluteTime;
                 },
                 xFrame: function(){
-                    return player.absolutePosition;
+                    var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
+                        absolutePosition: 0,
+                        velocity: 0,
+                        thrust: 0,
+                        mass: 1,
+                        absoluteTime: timeElapsed,
+                        properTime: timeElapsed,
+                    });
+                    return referenceFrame.absolutePosition;
                 },
                 debugSR: function () {
                     return options.debugSR ? 1 : 0;
@@ -658,7 +720,7 @@ _.noConflict();
             items: 3,
             width: 10,
             expr: function (emit, i, t) {
-                if (i < blackHoles.length) {
+                if (options.useBlackHoles && i < blackHoles.length) {
                     // Math.abs(events[i].relativePosition[0]) < options.stRadius &&
                     // Math.abs(events[i].relativePosition[1]) < options.stRadius) {
                     emit(blackHoles[i].relativePosition);
