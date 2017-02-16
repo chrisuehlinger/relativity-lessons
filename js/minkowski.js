@@ -21,7 +21,7 @@ _.noConflict();
         stRadius: 10,
         clipEvents: false,
         useRelativity: true,
-        debugSR: false,
+        debugSR: true,
         useLorentzTransform: true,
         useBlackHoles: false,
         showLightCones: true
@@ -40,7 +40,7 @@ _.noConflict();
     gui.add(options, 'useLorentzTransform');
     gui.add(options, 'useBlackHoles');
     gui.add(options, 'showLightCones');
-    gui.close();
+    // gui.close();
 
 
     var timerStarted = false,
