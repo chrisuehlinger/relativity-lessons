@@ -35,59 +35,59 @@ function initDiagram() {
     var lorentzShader = mathbox.shader({
         code: '#lorentz-transform',
     }, {
-            vFrame: function(){
-                var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
-                    absolutePosition: 0,
-                    velocity: 0,
-                    thrust: 0,
-                    mass: 1,
-                    absoluteTime: timeElapsed,
-                    properTime: timeElapsed,
-                });
-                return referenceFrame.velocity;
-            },
-            tFrame: function(){
-                var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
-                    absolutePosition: 0,
-                    velocity: 0,
-                    thrust: 0,
-                    mass: 1,
-                    absoluteTime: timeElapsed,
-                    properTime: timeElapsed,
-                });
-                return referenceFrame.absoluteTime;
-            },
-            xFrame: function(){
-                var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
-                    absolutePosition: 0,
-                    velocity: 0,
-                    thrust: 0,
-                    mass: 1,
-                    absoluteTime: timeElapsed,
-                    properTime: timeElapsed,
-                });
-                return referenceFrame.absolutePosition;
-            },
-            debugSR: function () {
-                return options.debugSR ? 1 : 0;
-            },
+        vFrame: function(){
+            var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
+                absolutePosition: 0,
+                velocity: 0,
+                thrust: 0,
+                mass: 1,
+                absoluteTime: timeElapsed,
+                properTime: timeElapsed,
+            });
+            return referenceFrame.velocity;
+        },
+        tFrame: function(){
+            var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
+                absolutePosition: 0,
+                velocity: 0,
+                thrust: 0,
+                mass: 1,
+                absoluteTime: timeElapsed,
+                properTime: timeElapsed,
+            });
+            return referenceFrame.absoluteTime;
+        },
+        xFrame: function(){
+            var referenceFrame = inTransition ? transitionFrame : (objects.filter(function (obj) { return obj.reference; })[0] || {
+                absolutePosition: 0,
+                velocity: 0,
+                thrust: 0,
+                mass: 1,
+                absoluteTime: timeElapsed,
+                properTime: timeElapsed,
+            });
+            return referenceFrame.absolutePosition;
+        },
+        debugSR: function () {
+            return options.debugSR ? 1 : 0;
+        },
 
-        });
+    });
     var blackHoleShader = mathbox.shader({
         code: '#blackhole-curvature',
     }, {
-            useBlackHoles: function () {
-                return options.useBlackHoles ? 1 : 0;
-            },
-            singularity: function (t) {
-                //   console.log(blackHole.relativePosition);
-                return blackHole.relativePosition;
-            },
-            rS: function (t) {
-                return blackHole.radius;
-            },
+        useBlackHoles: function () {
+            return options.useBlackHoles ? 1 : 0;
+        },
+        singularity: function (t) {
+            //   console.log(blackHole.relativePosition);
+            return blackHole.relativePosition;
+        },
+        rS: function (t) {
+            return blackHole.radius;
+        },
 
-        });
+    });
 
     var view = mathbox
         .set({
