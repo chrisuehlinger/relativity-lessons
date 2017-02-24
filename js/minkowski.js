@@ -21,7 +21,7 @@ _.noConflict();
         stRadius: 10,
         clipEvents: false,
         useRelativity: true,
-        debugSR: true,
+        debugSR: false,
         useLorentzTransform: true,
         useBlackHoles: false,
         showLightCones: true
@@ -83,7 +83,7 @@ _.noConflict();
             //     reference: false
             // },
             {
-                absolutePosition: 0,
+                absolutePosition: 5,
                 relativePosition: 0,
                 velocity: 0.000001,
                 absoluteTime: 0,
@@ -179,7 +179,7 @@ _.noConflict();
         initSimulation();
     }, 1000);
 
-    var thrustSign = 1;
+    var thrustSign = 0;
     window.onkeydown = function (e) {
         if (timerEnded) {
             return;
