@@ -8,7 +8,7 @@ mathbox = mathBox({
     }
 });
 three = mathbox.three;
-three.camera.position.set(0, 0, 1);
+three.camera.position.set(0, 0, 3);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 function displayTime(t){
@@ -103,38 +103,85 @@ function initDiagram() {
         id:'sprites',
         width: maxSize,
         height: maxSize,
-        items: 10,
+        // items: 10,
         channels:4,
         live:false,
         expr: function(emit,x,y){
-            objects.map(function(object){
-                var sprite = sprites[0],
-                    scaledX = x - Math.round((maxSize - sprite.image.width)/2),
-                    scaledY = y - Math.round((maxSize - sprite.image.height)/2);
-                if(scaledX >= 0 && scaledX < sprite.image.width 
-                    && scaledY >= 0 && scaledY < sprite.image.height){
-                    var i = 4*(scaledX+scaledY*sprite.image.width);
-                    var data = sprite.image.data;
-                    emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
-                } else {
-                    emit(0,0,0,0);
+
+            var sprite = sprites[0],
+                scaledX = x - Math.round((maxSize - sprite.image.width)/2),
+                scaledY = y - Math.round((maxSize - sprite.image.height)/2);
+            if(scaledX >= 0 && scaledX < sprite.image.width 
+                && scaledY >= 0 && scaledY < sprite.image.height){
+                var i = 4*(scaledX+scaledY*sprite.image.width);
+                var data = sprite.image.data;
+                emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
+            } else {
+                emit(0,0,0,0);
+            }
+            // objects.map(function(object){
+            //     var sprite = sprites[0],
+            //         scaledX = x - Math.round((maxSize - sprite.image.width)/2),
+            //         scaledY = y - Math.round((maxSize - sprite.image.height)/2);
+            //     if(scaledX >= 0 && scaledX < sprite.image.width 
+            //         && scaledY >= 0 && scaledY < sprite.image.height){
+            //         var i = 4*(scaledX+scaledY*sprite.image.width);
+            //         var data = sprite.image.data;
+            //         emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
+            //     } else {
+            //         emit(0,0,0,0);
+            //     }
+            // });
+            // for(var j = objects.length; j < 10; j++){
+            //     var sprite = sprites[0],
+            //         scaledX = x - Math.round((maxSize - sprite.image.width)/2),
+            //         scaledY = y - Math.round((maxSize - sprite.image.height)/2);
+            //     if(scaledX >= 0 && scaledX < sprite.image.width 
+            //         && scaledY >= 0 && scaledY < sprite.image.height){
+            //         var i = 4*(scaledX+scaledY*sprite.image.width);
+            //         var data = sprite.image.data;
+            //         emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
+            //     } else {
+            //         emit(0,0,0,0);
+            //     }
+            // }
+        }
+    });
+    
+    view.matrix({
+        id:'spriteEventPositions',
+        width:2,
+        height:2,
+        items:1000,
+        expr: function(emit,x,y){
+            var i = 0;
+            events.map(function(event){
+                if(i < 1000 && (!options.clipEvents || 
+                Math.abs(event.relativePosition[0]) < options.stRadius &&
+                Math.abs(event.relativePosition[1]) < options.stRadius)) {
+                    var scale = 0.75,
+                        sign = Math.sign(event.velocity) || 1;
+                    options.debugSR 
+                            ? emit(event.absolutePosition[0]+scale*sign*Math.pow(-1,y), event.absolutePosition[1]+scale*sign*Math.pow(-1,x), 0.1)
+                            : emit(event.relativePosition[0]+scale*sign*Math.pow(-1,y), event.relativePosition[1]+scale*sign*Math.pow(-1,x), 0.1);
+                    i++;
                 }
             });
-            for(var j = objects.length; j < 10; j++){
-                var sprite = sprites[0],
-                    scaledX = x - Math.round((maxSize - sprite.image.width)/2),
-                    scaledY = y - Math.round((maxSize - sprite.image.height)/2);
-                if(scaledX >= 0 && scaledX < sprite.image.width 
-                    && scaledY >= 0 && scaledY < sprite.image.height){
-                    var i = 4*(scaledX+scaledY*sprite.image.width);
-                    var data = sprite.image.data;
-                    emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
-                } else {
-                    emit(0,0,0,0);
-                }
+            for(; i < 1000; i++){
+                emit(0,0,0);
             }
         }
-    }).matrix({
+    }).surface({
+        blending:'normal',
+        color:0xFFFFFF,
+        zOrder:9,
+        zTest: false,
+        opacity:0.25,
+        points:'#spriteEventPositions',
+        map:'#sprites'
+    });
+    
+    view.matrix({
         id:'spritePositions',
         width:2,
         height:2,
@@ -155,6 +202,7 @@ function initDiagram() {
         blending:'normal',
         color:0xFFFFFF,
         zOrder:10,
+        zTest: false,
         points:'#spritePositions',
         map:'#sprites'
     });
@@ -202,27 +250,27 @@ function initDiagram() {
             },
             channels: 2
         })
-        .array({
-            id: 'objectColors',
-            width: 50,
-            channels: 4,
-            expr: function (emit, i, t) {
-                if (i < objects.length) {
-                    var color = objects[i].color;
-                    emit(color[0], color[1], color[2], 1.0);
-                }
-            },
-        })
-        .array({
-            id: 'objectSizes',
-            width: 50,
-            channels: 1,
-            expr: function (emit, i, t) {
-                if (i < objects.length) {
-                    emit(objects[i].size);
-                }
-            },
-        })
+        // .array({
+        //     id: 'objectColors',
+        //     width: 50,
+        //     channels: 4,
+        //     expr: function (emit, i, t) {
+        //         if (i < objects.length) {
+        //             var color = objects[i].color;
+        //             emit(color[0], color[1], color[2], 1.0);
+        //         }
+        //     },
+        // })
+        // .array({
+        //     id: 'objectSizes',
+        //     width: 50,
+        //     channels: 1,
+        //     expr: function (emit, i, t) {
+        //         if (i < objects.length) {
+        //             emit(objects[i].size);
+        //         }
+        //     },
+        // })
         // .point({
         //     points: '#currentPosition',
         //     // color: 0x3090FF,
@@ -252,40 +300,40 @@ function initDiagram() {
             zIndex: 1,
         });
 
-    view.array({
-        id: 'events',
-        channels: 2,
-        width: 1e4,
-        expr: function (emit, i, t) {
-            if (i < events.length &&
-                (!options.clipEvents || 
-                Math.abs(events[i].relativePosition[0]) < options.stRadius &&
-                Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
-                    options.debugSR
-                        ? emit(events[i].absolutePosition[0], events[i].absolutePosition[1])
-                        : emit(events[i].relativePosition[0], events[i].relativePosition[1]);
-            }
-        }
-    }).array({
-        id: 'eventColors',
-        width: 1e4,
-        channels: 4,
-        expr: function (emit, i, t) {
-            if (i < events.length) {
-                if (i < events.length &&
-                    (!options.clipEvents || Math.abs(events[i].relativePosition[0]) < options.stRadius &&
-                Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
-                    var color = events[i].color;
-                    emit(color[0], color[1], color[2], 1.0);
-                }
-            }
-        }
-    }).point({
-        points: '#events',
-        // color: 0x3090FF,
-        colors: '#eventColors',
-        size: 10
-    })
+    // view.array({
+    //     id: 'events',
+    //     channels: 2,
+    //     width: 1e4,
+    //     expr: function (emit, i, t) {
+    //         if (i < events.length &&
+                // (!options.clipEvents || 
+                // Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+                // Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
+    //                 options.debugSR
+    //                     ? emit(events[i].absolutePosition[0], events[i].absolutePosition[1])
+    //                     : emit(events[i].relativePosition[0], events[i].relativePosition[1]);
+    //         }
+    //     }
+    // }).array({
+    //     id: 'eventColors',
+    //     width: 1e4,
+    //     channels: 4,
+    //     expr: function (emit, i, t) {
+    //         if (i < events.length) {
+    //             if (i < events.length &&
+    //                 (!options.clipEvents || Math.abs(events[i].relativePosition[0]) < options.stRadius &&
+    //             Math.abs(events[i].relativePosition[1]) < options.stRadius)) {
+    //                 var color = events[i].color;
+    //                 emit(color[0], color[1], color[2], 1.0);
+    //             }
+    //         }
+    //     }
+    // }).point({
+    //     points: '#events',
+    //     // color: 0x3090FF,
+    //     colors: '#eventColors',
+    //     size: 10
+    // })
 
 
 

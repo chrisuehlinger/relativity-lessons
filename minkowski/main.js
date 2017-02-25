@@ -1,9 +1,9 @@
 var options = {
     timeLimit: 100,
     timeFactor: 1,
-    updatesPerSecond: 2,
+    updatesPerSecond: 1,
     stRadius: 10,
-    clipEvents: false,
+    clipEvents: true,
     useRelativity: true,
     debugSR: false,
     useLorentzTransform: true,
