@@ -32,9 +32,11 @@ var timerStarted = false,
     timeElapsed = 0;
 
 loadingPromise.then(function(){
-    initDiagram(objectCount, eventCount);
-    setTimeout(function () {
-        timerStarted = true;
-        initSimulation();
-    }, 1000);
+    setTimeout(function(){
+        initDiagram(objectCount, eventCount);
+        setTimeout(function () {
+            timerStarted = true;
+            initSimulation();
+        }, 1000);
+    });
 });

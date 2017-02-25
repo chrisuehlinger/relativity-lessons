@@ -8,7 +8,7 @@ mathbox = mathBox({
     }
 });
 three = mathbox.three;
-three.camera.position.set(0, 0, 3);
+three.camera.position.set(0, 0, 1);
 three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
 
 function displayTime(t){
@@ -143,15 +143,17 @@ function initDiagram() {
             objects.map(function(object){
                 var scale = 0.75;
                 options.debugSR 
-                        ? emit(object.absolutePosition+scale*Math.pow(-1,x), object.absoluteTime+scale*Math.pow(-1,y), 0)
-                        : emit(object.relativePosition+scale*Math.pow(-1,x), object.currentTime+scale*Math.pow(-1,y), 0);
+                        ? emit(object.absolutePosition+scale*Math.pow(-1,x), object.absoluteTime+scale*Math.pow(-1,y), 0.1)
+                        : emit(object.relativePosition+scale*Math.pow(-1,x), object.currentTime+scale*Math.pow(-1,y), 0.1);
             });
             for(var i = objects.length; i < 10; i++){
                 emit(0,0,0);
             }
         }
     }).surface({
+        blending:'normal',
         color:0xFFFFFF,
+        zOrder:10,
         points:'#spritePositions',
         map:'#sprites'
     });
