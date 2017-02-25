@@ -141,10 +141,11 @@ function initDiagram() {
         items:10,
         expr: function(emit,x,y){
             objects.map(function(object){
-                var scale = 0.75;
+                var scale = 0.75,
+                    sign = Math.sign(object.velocity) || 1;
                 options.debugSR 
-                        ? emit(object.absolutePosition+scale*Math.pow(-1,x), object.absoluteTime+scale*Math.pow(-1,y), 0.1)
-                        : emit(object.relativePosition+scale*Math.pow(-1,x), object.currentTime+scale*Math.pow(-1,y), 0.1);
+                        ? emit(object.absolutePosition+scale*sign*Math.pow(-1,y), object.absoluteTime+scale*sign*Math.pow(-1,x), 0.1)
+                        : emit(object.relativePosition+scale*sign*Math.pow(-1,y), object.currentTime+scale*sign*Math.pow(-1,x), 0.1);
             });
             for(var i = objects.length; i < 10; i++){
                 emit(0,0,0);
