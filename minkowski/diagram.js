@@ -5,7 +5,7 @@ mathbox = mathBox({
     plugins: ['core', 'controls', 'cursor', 'stats'],
     controls: {
         klass: THREE.OrbitControls
-    },
+    }
 });
 three = mathbox.three;
 three.camera.position.set(0, 0, 3);
@@ -97,6 +97,57 @@ function initDiagram() {
             range: [[-options.stRadius, options.stRadius], [-options.stRadius, options.stRadius], [-10, 10]],
             scale: [1.5, 1.5, 1.5],
         });
+
+    view.matrix({
+        id:'sprites',
+        width: 150,
+        height: 150,
+        items: 10,
+        channels:4,
+        live:false,
+        expr: function(emit,x,y){
+            // objects.map(function(object){
+            //     var sprite = sprites[1];
+            //     if(x < sprite.image.width && y < sprite.image.height){
+            //         var i = 4*(x+(sprite.image.height-y)*sprite.image.width);
+            //         var data = sprite.image.data;
+            //         emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
+            //     } else {
+            //         emit(0,0,0,0);
+            //     }
+            // });
+            for(var j = 0; j < 10; j++){
+                var sprite = sprites[0];
+                if(x < sprite.image.width && y < sprite.image.height){
+                    var i = 4*(x+y*sprite.image.width);
+                    var data = sprite.image.data;
+                    emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
+                } else {
+                    emit(0,0,0,0);
+                }
+            }
+        }
+    }).matrix({
+        id:'spritePositions',
+        width:2,
+        height:2,
+        items:10,
+        expr: function(emit,x,y){
+            objects.map(function(object){
+                options.debugSR 
+                        ? emit(object.absolutePosition+1*Math.pow(-1,x), object.absoluteTime+1*Math.pow(-1,y), 0)
+                        : emit(object.relativePosition+1*Math.pow(-1,x), object.currentTime+1*Math.pow(-1,y), 0);
+            });
+            for(var i = objects.length; i < 10; i++){
+                emit(0,0,0);
+            }
+        }
+    }).surface({
+        color:0xFFFFFF,
+        points:'#spritePositions',
+        map:'#sprites'
+    });
+
     view
         .scale({
             divide: 1,
@@ -161,13 +212,13 @@ function initDiagram() {
                 }
             },
         })
-        .point({
-            points: '#currentPosition',
-            // color: 0x3090FF,
-            colors: '#objectColors',
-            // size: 10
-            sizes: "#objectSizes"
-        })
+        // .point({
+        //     points: '#currentPosition',
+        //     // color: 0x3090FF,
+        //     colors: '#objectColors',
+        //     // size: 10
+        //     sizes: "#objectSizes"
+        // })
         .text({
             font: 'Helvetica',
             width:  50,

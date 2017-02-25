@@ -31,7 +31,7 @@ var timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
 
-setTimeout(function(){
+loadingPromise.then(function(){
     initDiagram(objectCount, eventCount);
     setTimeout(function () {
         timerStarted = true;
