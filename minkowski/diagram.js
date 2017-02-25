@@ -98,28 +98,35 @@ function initDiagram() {
             scale: [1.5, 1.5, 1.5],
         });
 
+    var maxSize = 150;
     view.matrix({
         id:'sprites',
-        width: 150,
-        height: 150,
+        width: maxSize,
+        height: maxSize,
         items: 10,
         channels:4,
         live:false,
         expr: function(emit,x,y){
-            // objects.map(function(object){
-            //     var sprite = sprites[1];
-            //     if(x < sprite.image.width && y < sprite.image.height){
-            //         var i = 4*(x+(sprite.image.height-y)*sprite.image.width);
-            //         var data = sprite.image.data;
-            //         emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
-            //     } else {
-            //         emit(0,0,0,0);
-            //     }
-            // });
-            for(var j = 0; j < 10; j++){
-                var sprite = sprites[0];
-                if(x < sprite.image.width && y < sprite.image.height){
-                    var i = 4*(x+y*sprite.image.width);
+            objects.map(function(object){
+                var sprite = sprites[0],
+                    scaledX = x - Math.round((maxSize - sprite.image.width)/2),
+                    scaledY = y - Math.round((maxSize - sprite.image.height)/2);
+                if(scaledX >= 0 && scaledX < sprite.image.width 
+                    && scaledY >= 0 && scaledY < sprite.image.height){
+                    var i = 4*(scaledX+scaledY*sprite.image.width);
+                    var data = sprite.image.data;
+                    emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
+                } else {
+                    emit(0,0,0,0);
+                }
+            });
+            for(var j = objects.length; j < 10; j++){
+                var sprite = sprites[0],
+                    scaledX = x - Math.round((maxSize - sprite.image.width)/2),
+                    scaledY = y - Math.round((maxSize - sprite.image.height)/2);
+                if(scaledX >= 0 && scaledX < sprite.image.width 
+                    && scaledY >= 0 && scaledY < sprite.image.height){
+                    var i = 4*(scaledX+scaledY*sprite.image.width);
                     var data = sprite.image.data;
                     emit(data[i]/256,data[i+1]/256,data[i+2]/256,data[i+3]/256);
                 } else {
@@ -134,9 +141,10 @@ function initDiagram() {
         items:10,
         expr: function(emit,x,y){
             objects.map(function(object){
+                var scale = 0.75;
                 options.debugSR 
-                        ? emit(object.absolutePosition+1*Math.pow(-1,x), object.absoluteTime+1*Math.pow(-1,y), 0)
-                        : emit(object.relativePosition+1*Math.pow(-1,x), object.currentTime+1*Math.pow(-1,y), 0);
+                        ? emit(object.absolutePosition+scale*Math.pow(-1,x), object.absoluteTime+scale*Math.pow(-1,y), 0)
+                        : emit(object.relativePosition+scale*Math.pow(-1,x), object.currentTime+scale*Math.pow(-1,y), 0);
             });
             for(var i = objects.length; i < 10; i++){
                 emit(0,0,0);
