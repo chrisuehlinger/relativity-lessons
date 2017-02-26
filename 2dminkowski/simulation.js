@@ -32,6 +32,9 @@ window.onkeyup = function () {
     thrustSign = [0, 0];
 }
 
+
+
+
 function changeFrame(index){
     objects.map(function(object) { object.reference = false; });
     objects[index].reference = true;
@@ -41,16 +44,25 @@ function initSimulation() {
     var lastFrameTime = startTime = Date.now();
     var updateFrame = requestAnimationFrame(update);
 
+    var $orientationDisplay = $('<div></div>');
     var $vDisplay = $('<div></div>');
     var $xDisplay = $('<div></div>');
     var $tDisplay = $('<div></div>');
     var $tauDisplay = $('<div></div>');
     var $display = $('<div class="info-display"></div>')
+        .append($orientationDisplay)
         .append($vDisplay)
         .append($xDisplay)
         .append($tauDisplay)
         .append($tDisplay);
     $('body').append($display);
+
+    window.addEventListener("deviceorientation", handleOrientation, true);
+
+    function handleOrientation(e){
+        $orientationDisplay.text('a = ' + lodash.round(e.alpha,0) + ' B = ' + lodash.round(e.beta,0) + ' y = ' + lodash.round(e.gamma,0));
+        thrustSign = [e.beta/45, e.gamma/45];
+    }
 
     function update() {
         var timeSinceLastFrame = options.timeFactor*(Date.now() - lastFrameTime) / 1000;
