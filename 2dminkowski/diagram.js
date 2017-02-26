@@ -1,6 +1,26 @@
 lodash = _;
 lodash.noConflict();
 
+function displayTime(t){
+    var absT = Math.abs(t);
+    if(absT === Infinity){
+        t = '\u221e';
+    } else if (absT > 31557600) {
+        t = lodash.floor(t/31557600) + 'year' +  lodash.floor((t%31557600)/86400) + 'day';
+    } else if (absT > 86400) {
+        t = lodash.floor(t/86400) + 'day' +  lodash.floor((t%86400)/3600) + 'hr';
+    } else if (absT > 3600) {
+        t = lodash.floor(t/3600) + 'hr' +  lodash.floor((t%3600)/60) + 'm';
+    } else if (absT > 60) {
+        t = lodash.floor(t/60) + 'm' +  lodash.floor(t%60) + 's';
+    } else if (absT > 1) {
+        t = lodash.floor(t) + 's';
+    } else {
+        t = lodash.round(t,2) + 's';
+    }
+    return t;
+}
+
 function initDiagram(numItems) {
     mathbox = mathBox({
         plugins: ['core', 'controls', 'cursor', 'stats'],
@@ -18,7 +38,7 @@ function initDiagram(numItems) {
             return player.velocity;
         },
         tFrame: function(){
-            return player.properTime;
+            return player.absoluteTime;
         },
         xFrame: function(){
             return player.absolutePosition[0];
@@ -89,7 +109,7 @@ function initDiagram(numItems) {
             width: numItems,
             expr: function (emit, i, t) {
                 options.debugSR
-                    ? emit(objects[i].absolutePosition[0], objects[i].properTime, -objects[i].absolutePosition[1])
+                    ? emit(objects[i].absolutePosition[0], objects[i].absoluteTime, -objects[i].absolutePosition[1])
                     : emit(objects[i].relativePosition[0], objects[i].currentTime, -objects[i].relativePosition[1]);
             },
             channels: 3,
@@ -109,6 +129,26 @@ function initDiagram(numItems) {
             colors: '#objectColors',
             size: 10,
             zBias: 1
+        }).text({
+            font: 'Helvetica',
+            width:  50,
+            height: 5,
+            depth:  2,
+            expr: function (emit, i) {
+                if(i < objects.length) {
+                    emit(displayTime(objects[i].properTime));
+                }
+            },
+        })
+        .label({
+            color: '#000000',
+            points: '#currentPosition',
+            snap: false,
+            outline: 2,
+            size: 20,
+            offset: [32, 32],
+            depth: .5,
+            zIndex: 1,
         })
         .axis({
             axis: 1
@@ -184,7 +224,7 @@ function initDiagram(numItems) {
         height: 10,
         expr: function (emit, x, y) {
             if(options.debugSR) {
-                var t = (x*player.velocity[0]) + (y*player.velocity[1]) + (player.properTime - (player.velocity[0]*player.absolutePosition[0]) - (player.velocity[1]*player.absolutePosition[1]));
+                var t = (x*player.velocity[0]) + (y*player.velocity[1]) + (player.absoluteTime - (player.velocity[0]*player.absolutePosition[0]) - (player.velocity[1]*player.absolutePosition[1]));
                 emit(x, t, -y);
             }
         }
@@ -200,8 +240,8 @@ function initDiagram(numItems) {
         expr: function (emit, t) {
             if(options.debugSR) {
                 var object = objects[1];
-                var x = object.velocity[0]*(t - (object.properTime - object.absolutePosition[0]/object.velocity[0]));
-                var y = object.velocity[1]*(t - (object.properTime - object.absolutePosition[1]/object.velocity[1]));
+                var x = object.velocity[0]*(t - (object.absoluteTime - object.absolutePosition[0]/object.velocity[0]));
+                var y = object.velocity[1]*(t - (object.absoluteTime - object.absolutePosition[1]/object.velocity[1]));
                 emit(x, t, -y);
             }
         }
@@ -217,12 +257,12 @@ function initDiagram(numItems) {
                 var obj = objects[1],
                     vFX = player.velocity[0],
                     vFY = player.velocity[1],
-                    tF = player.properTime,
+                    tF = player.absoluteTime,
                     xF = player.absolutePosition[0],
                     yF = player.absolutePosition[1],
                     vX = obj.velocity[0],
                     vY = obj.velocity[1],
-                    t0 = obj.properTime,
+                    t0 = obj.absoluteTime,
                     x0 = obj.absolutePosition[0],
                     y0 = obj.absolutePosition[1],
                     t = (vX*vFX*(t0 - x0/vX) + vY*vFY*(t0-y0/vY) - (tF - vFX*xF - vFY*yF)) / (vX*vFX + vY*vFY - 1),
