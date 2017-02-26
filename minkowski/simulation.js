@@ -180,7 +180,6 @@ function initSimulation() {
                     }
                 }
 
-
                 object.absolutePosition += v * timeSinceLastFrame;
                 object.absoluteTime += timeSinceLastFrame;
                 object.relativePosition = (object.absolutePosition - referenceFrame.absolutePosition);

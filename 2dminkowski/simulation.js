@@ -43,7 +43,13 @@ function initSimulation() {
 
     var $vDisplay = $('<div></div>');
     var $xDisplay = $('<div></div>');
-    var $display = $('<div class="info-display"></div>').append($vDisplay).append($xDisplay);
+    var $tDisplay = $('<div></div>');
+    var $tauDisplay = $('<div></div>');
+    var $display = $('<div class="info-display"></div>')
+        .append($vDisplay)
+        .append($xDisplay)
+        .append($tauDisplay)
+        .append($tDisplay);
     $('body').append($display);
 
     function update() {
@@ -54,6 +60,8 @@ function initSimulation() {
         var referenceFrame = objects.filter(function (obj) { return obj.reference; })[0] || {
             absolutePosition: [0, 0],
             velocity: [0, 0],
+            absoluteTime: timeElapsed,
+            properTime: timeElapsed,
             thrust: 0,
             mass: 10
         }
@@ -81,14 +89,18 @@ function initSimulation() {
                 cos2Theta = cosTheta * cosTheta;
         }
         gamma = Math.sqrt(1 - beta * beta);
+        var tFrame = referenceFrame.absoluteTime + gamma*timeSinceLastFrame;
 
         $vDisplay.text('v = ' + lodash.round(beta, 3) + 'c (' + lodash.round(referenceFrame.velocity[0],3) + ', ' + lodash.round(referenceFrame.velocity[1],3) + ')');
         $xDisplay.text('x = ' + lodash.round(referenceFrame.absolutePosition[0], 3) + ' y = ' + lodash.round(referenceFrame.absolutePosition[1], 3));
+        $tauDisplay.text('tau = ' + displayTime(referenceFrame.properTime));
+        $tDisplay.text('t = ' + displayTime(tFrame));
 
 
-        referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
-        referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
-        referenceFrame.absoluteTime = timeElapsed;
+        referenceFrame.absolutePosition[0] += gamma*referenceFrame.velocity[0] * timeSinceLastFrame;
+        referenceFrame.absolutePosition[1] += gamma*referenceFrame.velocity[1] * timeSinceLastFrame;
+        referenceFrame.absoluteTime += gamma*timeSinceLastFrame;
+        referenceFrame.properTime += timeSinceLastFrame;
         referenceFrame.currentTime = 0;
         referenceFrame.relativePosition = [0,0];
 
@@ -113,7 +125,10 @@ function initSimulation() {
                         dy = y - referenceFrame.absolutePosition[1],
                         xPrime = -beta * gamma * cosTheta * dt + (gamma * cos2Theta + sin2Theta) * dx + (gamma - 1) * sinTheta * cosTheta * dy,
                         yPrime = -beta * gamma * sinTheta * dt + (gamma * sin2Theta + cos2Theta) * dy + (gamma - 1) * sinTheta * cosTheta * dx,
-                        tPrime = gamma * dt + -gamma * beta * cosTheta * dx + -gamma * beta * sinTheta * dy;;
+                        tPrime = gamma * dt + -gamma * beta * cosTheta * dx + -gamma * beta * sinTheta * dy,
+                        objBeta = Math.sqrt(object.velocity[0] * object.velocity[0] + object.velocity[1] * object.velocity[1]),
+                        objGamma = 1/Math.sqrt(1-objBeta*objBeta),
+                        objTau = objGamma*(t - vX*x - vY*y);
 
                     // console.log(x,y,t);
                     object.absolutePosition = [x,y];
@@ -123,10 +138,12 @@ function initSimulation() {
                         yPrime
                     ];
                     object.currentTime = tPrime;
+                    object.properTime = objTau;
                 } else {
                     object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
                     object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
                     object.absoluteTime = timeElapsed;
+                    object.properTime = timeElapsed;
 
                     object.relativePosition = [
                         (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),

@@ -129,6 +129,26 @@ function initDiagram(numItems) {
             colors: '#objectColors',
             size: 10,
             zBias: 1
+        }).text({
+            font: 'Helvetica',
+            width:  50,
+            height: 5,
+            depth:  2,
+            expr: function (emit, i) {
+                if(i < objects.length) {
+                    emit(displayTime(objects[i].properTime));
+                }
+            },
+        })
+        .label({
+            color: '#000000',
+            points: '#currentPosition',
+            snap: false,
+            outline: 2,
+            size: 20,
+            offset: [32, 32],
+            depth: .5,
+            zIndex: 1,
         })
         .axis({
             axis: 1
