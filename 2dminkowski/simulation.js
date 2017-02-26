@@ -192,6 +192,7 @@ function initSimulation() {
         objects.map(function (object) {
             events.push({
                 absolutePosition: [object.absolutePosition[0], object.absolutePosition[1], object.absoluteTime],
+                velocity: [object.velocity[0], object.velocity[1]],
                 relativePosition: [0, 0, 0],
                 color: object.color,
                 size: object.size-2

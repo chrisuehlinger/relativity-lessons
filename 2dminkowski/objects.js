@@ -24,7 +24,7 @@ others = lodash.fill(Array(1), 0).map(function () {
         reference: false
     };
 }),
-events = lodash.fill(Array(1), 0).map(function () {
+events = lodash.fill(Array(0), 0).map(function () {
     var pos = [Math.random() * 40 - 20, Math.random() * 40 - 20, Math.random() * 60 - 10];
     return {
         absolutePosition: pos,

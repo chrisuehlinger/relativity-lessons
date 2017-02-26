@@ -8,7 +8,7 @@ var options = {
     useRelativity: true,
     useLorentzBoost: true,
     useBlackHoles: true,
-    showLightCones: true
+    showLightCones: false
 };
 
 var gui = new dat.GUI();
