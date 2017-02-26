@@ -29,12 +29,14 @@ var timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
 
-setTimeout(function(){
-    initDiagram(objectCount);
-    setTimeout(function () {
-        timerStarted = true;
-        initSimulation();
-    }, 1000);
+loadingPromise.then(function(){
+    setTimeout(function(){
+        initDiagram(objectCount);
+        setTimeout(function () {
+            timerStarted = true;
+            initSimulation();
+        }, 1000);
+    });
 });
 
 
