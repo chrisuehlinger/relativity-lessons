@@ -88,7 +88,7 @@ function initSimulation() {
 
         referenceFrame.absolutePosition[0] += referenceFrame.velocity[0] * timeSinceLastFrame;
         referenceFrame.absolutePosition[1] += referenceFrame.velocity[1] * timeSinceLastFrame;
-        referenceFrame.properTime = timeElapsed;
+        referenceFrame.absoluteTime = timeElapsed;
         referenceFrame.currentTime = 0;
         referenceFrame.relativePosition = [0,0];
 
@@ -97,18 +97,18 @@ function initSimulation() {
                 if(options.useLorentzBoost){
                     var vFX = referenceFrame.velocity[0],
                         vFY = referenceFrame.velocity[1],
-                        tF = referenceFrame.properTime,
+                        tF = referenceFrame.absoluteTime,
                         xF = referenceFrame.absolutePosition[0],
                         yF = referenceFrame.absolutePosition[1],
                         vX = object.velocity[0],
                         vY = object.velocity[1],
-                        t0 = object.properTime,
+                        t0 = object.absoluteTime,
                         x0 = object.absolutePosition[0],
                         y0 = object.absolutePosition[1],
                         t = (vX*vFX*(t0 - x0/vX) + vY*vFY*(t0-y0/vY) - (tF - vFX*xF - vFY*yF)) / (vX*vFX + vY*vFY - 1),
                         x = vX*(t - (t0 - x0/vX)),
                         y = vY*(t - (t0 - y0/vY)),
-                        dt = t - referenceFrame.properTime,
+                        dt = t - referenceFrame.absoluteTime,
                         dx = x - referenceFrame.absolutePosition[0],
                         dy = y - referenceFrame.absolutePosition[1],
                         xPrime = -beta * gamma * cosTheta * dt + (gamma * cos2Theta + sin2Theta) * dx + (gamma - 1) * sinTheta * cosTheta * dy,
@@ -117,7 +117,7 @@ function initSimulation() {
 
                     // console.log(x,y,t);
                     object.absolutePosition = [x,y];
-                    object.properTime = t;
+                    object.absoluteTime = t;
                     object.relativePosition = [
                         xPrime,
                         yPrime
@@ -126,7 +126,7 @@ function initSimulation() {
                 } else {
                     object.absolutePosition[0] += object.velocity[0] * timeSinceLastFrame;
                     object.absolutePosition[1] += object.velocity[1] * timeSinceLastFrame;
-                    object.properTime = timeElapsed;
+                    object.absoluteTime = timeElapsed;
 
                     object.relativePosition = [
                         (object.absolutePosition[0] - referenceFrame.absolutePosition[0]),
@@ -152,7 +152,7 @@ function initSimulation() {
                     t = event.absolutePosition[2],
                     dx = x - referenceFrame.absolutePosition[0],
                     dy = y - referenceFrame.absolutePosition[1],
-                    dt = t - referenceFrame.properTime,
+                    dt = t - referenceFrame.absoluteTime,
                     xPrime = -beta*gamma*cosTheta*dt + (gamma*cos2Theta + sin2Theta)*dx + (gamma - 1)*sinTheta*cosTheta*dy,
                     yPrime = -beta*gamma*sinTheta*dt + (gamma*sin2Theta + cos2Theta)*dy + (gamma - 1)*sinTheta*cosTheta*dx,
                     tPrime = gamma*dt + -gamma*beta*cosTheta*dx + -gamma*beta*sinTheta*dy;
@@ -174,7 +174,7 @@ function initSimulation() {
 
         objects.map(function (object) {
             events.push({
-                absolutePosition: [object.absolutePosition[0], object.absolutePosition[1], object.properTime],
+                absolutePosition: [object.absolutePosition[0], object.absolutePosition[1], object.absoluteTime],
                 relativePosition: [0, 0, 0],
                 color: object.color,
                 size: object.size-2

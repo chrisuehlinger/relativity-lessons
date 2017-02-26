@@ -1,7 +1,7 @@
 var player = {
     absolutePosition: [0, 0],
     relativePosition: [0, 0],
-    properTime: 0,
+    absoluteTime: 0,
     mass: 100,
     thrust: 5,
     velocity: [0.25, 0.25],
@@ -15,7 +15,7 @@ var player = {
         return {
             absolutePosition: pos,
             relativePosition: pos,
-            properTime: 0,
+            absoluteTime: 0,
             velocity: [0.000001, 0.5],
             color: [100, 0, 0],
             size: 4,

@@ -18,7 +18,7 @@ function initDiagram(numItems) {
             return player.velocity;
         },
         tFrame: function(){
-            return player.properTime;
+            return player.absoluteTime;
         },
         xFrame: function(){
             return player.absolutePosition[0];
@@ -89,7 +89,7 @@ function initDiagram(numItems) {
             width: numItems,
             expr: function (emit, i, t) {
                 options.debugSR
-                    ? emit(objects[i].absolutePosition[0], objects[i].properTime, -objects[i].absolutePosition[1])
+                    ? emit(objects[i].absolutePosition[0], objects[i].absoluteTime, -objects[i].absolutePosition[1])
                     : emit(objects[i].relativePosition[0], objects[i].currentTime, -objects[i].relativePosition[1]);
             },
             channels: 3,
@@ -184,7 +184,7 @@ function initDiagram(numItems) {
         height: 10,
         expr: function (emit, x, y) {
             if(options.debugSR) {
-                var t = (x*player.velocity[0]) + (y*player.velocity[1]) + (player.properTime - (player.velocity[0]*player.absolutePosition[0]) - (player.velocity[1]*player.absolutePosition[1]));
+                var t = (x*player.velocity[0]) + (y*player.velocity[1]) + (player.absoluteTime - (player.velocity[0]*player.absolutePosition[0]) - (player.velocity[1]*player.absolutePosition[1]));
                 emit(x, t, -y);
             }
         }
@@ -200,8 +200,8 @@ function initDiagram(numItems) {
         expr: function (emit, t) {
             if(options.debugSR) {
                 var object = objects[1];
-                var x = object.velocity[0]*(t - (object.properTime - object.absolutePosition[0]/object.velocity[0]));
-                var y = object.velocity[1]*(t - (object.properTime - object.absolutePosition[1]/object.velocity[1]));
+                var x = object.velocity[0]*(t - (object.absoluteTime - object.absolutePosition[0]/object.velocity[0]));
+                var y = object.velocity[1]*(t - (object.absoluteTime - object.absolutePosition[1]/object.velocity[1]));
                 emit(x, t, -y);
             }
         }
@@ -217,12 +217,12 @@ function initDiagram(numItems) {
                 var obj = objects[1],
                     vFX = player.velocity[0],
                     vFY = player.velocity[1],
-                    tF = player.properTime,
+                    tF = player.absoluteTime,
                     xF = player.absolutePosition[0],
                     yF = player.absolutePosition[1],
                     vX = obj.velocity[0],
                     vY = obj.velocity[1],
-                    t0 = obj.properTime,
+                    t0 = obj.absoluteTime,
                     x0 = obj.absolutePosition[0],
                     y0 = obj.absolutePosition[1],
                     t = (vX*vFX*(t0 - x0/vX) + vY*vFY*(t0-y0/vY) - (tF - vFX*xF - vFY*yF)) / (vX*vFX + vY*vFY - 1),
