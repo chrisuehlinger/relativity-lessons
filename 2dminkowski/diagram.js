@@ -1,6 +1,26 @@
 lodash = _;
 lodash.noConflict();
 
+function displayTime(t){
+    var absT = Math.abs(t);
+    if(absT === Infinity){
+        t = '\u221e';
+    } else if (absT > 31557600) {
+        t = lodash.floor(t/31557600) + 'year' +  lodash.floor((t%31557600)/86400) + 'day';
+    } else if (absT > 86400) {
+        t = lodash.floor(t/86400) + 'day' +  lodash.floor((t%86400)/3600) + 'hr';
+    } else if (absT > 3600) {
+        t = lodash.floor(t/3600) + 'hr' +  lodash.floor((t%3600)/60) + 'm';
+    } else if (absT > 60) {
+        t = lodash.floor(t/60) + 'm' +  lodash.floor(t%60) + 's';
+    } else if (absT > 1) {
+        t = lodash.floor(t) + 's';
+    } else {
+        t = lodash.round(t,2) + 's';
+    }
+    return t;
+}
+
 function initDiagram(numItems) {
     mathbox = mathBox({
         plugins: ['core', 'controls', 'cursor', 'stats'],
