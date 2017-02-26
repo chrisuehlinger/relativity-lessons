@@ -1,9 +1,9 @@
 var options = {
     timeLimit: 100,
     timeFactor: 1,
-    updatesPerSecond: 2,
+    updatesPerSecond: 1,
     stRadius: 10,
-    clipEvents: false,
+    clipEvents: true,
     useRelativity: true,
     debugSR: false,
     useLorentzTransform: true,
@@ -31,10 +31,12 @@ var timerStarted = false,
     timerEnded = false,
     timeElapsed = 0;
 
-setTimeout(function(){
-    initDiagram(objectCount, eventCount);
-    setTimeout(function () {
-        timerStarted = true;
-        initSimulation();
-    }, 1000);
+loadingPromise.then(function(){
+    setTimeout(function(){
+        initDiagram(objectCount, eventCount);
+        setTimeout(function () {
+            timerStarted = true;
+            initSimulation();
+        }, 1000);
+    });
 });

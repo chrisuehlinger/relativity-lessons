@@ -89,7 +89,7 @@ var player = {
         };
     }),
     hmm = -10,
-    events = lodash.fill(Array(100), 0).map(function () {
+    events = lodash.fill(Array(0), 0).map(function () {
     var pos = [Math.random()*20 - 10, Math.random() * 100 - 10];
         return {
             absolutePosition: pos,
