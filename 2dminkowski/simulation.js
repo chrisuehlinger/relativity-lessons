@@ -91,9 +91,16 @@ function initSimulation() {
         gamma = Math.sqrt(1 - beta * beta);
         var tFrame = referenceFrame.absoluteTime + gamma*timeSinceLastFrame;
 
-        $vDisplay.text('v = ' + lodash.round(beta, 3) + 'c (' + lodash.round(referenceFrame.velocity[0],3) + ', ' + lodash.round(referenceFrame.velocity[1],3) + ')');
-        $xDisplay.text('x = ' + lodash.round(referenceFrame.absolutePosition[0], 3) + ' y = ' + lodash.round(referenceFrame.absolutePosition[1], 3));
-        $tauDisplay.text('tau = ' + displayTime(referenceFrame.properTime));
+        if(options.useRelativity){
+            $vDisplay.text('v = ' + lodash.round(beta, 3) + 'c (' + lodash.round(referenceFrame.velocity[0],3) + ', ' + lodash.round(referenceFrame.velocity[1],3) + ')');
+            $xDisplay.text('x = ' + lodash.round(referenceFrame.absolutePosition[0], 3) + ' y = ' + lodash.round(referenceFrame.absolutePosition[1], 3));
+            $tauDisplay.text('tau = ' + displayTime(referenceFrame.properTime));
+        } else {
+            $vDisplay.text('v = (' + lodash.round(player.velocity[0],3) + ', ' + lodash.round(player.velocity[1],3) + ')');
+            $xDisplay.text('x = ' + lodash.round(player.absolutePosition[0], 3) + ' y = ' + lodash.round(player.absolutePosition[1], 3));
+            $tauDisplay.text('tau = ' + displayTime(player.properTime));
+
+        }
         $tDisplay.text('t = ' + displayTime(tFrame));
 
 
