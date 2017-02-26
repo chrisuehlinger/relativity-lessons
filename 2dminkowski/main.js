@@ -5,9 +5,9 @@ var options = {
     stRadius: 10,
     clipEvents: false,
     debugSR: false,
-    useRelativity: true,
-    useLorentzBoost: true,
-    useBlackHoles: true,
+    useRelativity: false,
+    useLorentzBoost: false,
+    useBlackHoles: false,
     showLightCones: false
 };
 
