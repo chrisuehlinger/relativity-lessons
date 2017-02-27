@@ -3,7 +3,7 @@ var options = {
     timeFactor: 1,
     updatesPerSecond: 1,
     stRadius: 10,
-    clipEvents: true,
+    clipEvents: false,
     useRelativity: true,
     debugSR: false,
     useLorentzTransform: true,

@@ -107,6 +107,9 @@ function initSimulation() {
         .append($xDisplay)
         .append($tauDisplay)
         .append($tDisplay);
+    $display.css({
+        color:'#efefef'
+    })
     $('body').append($display);
 
     window.addEventListener("deviceorientation", handleOrientation, true);

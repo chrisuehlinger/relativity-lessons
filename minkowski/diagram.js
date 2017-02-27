@@ -9,7 +9,7 @@ mathbox = mathBox({
 });
 three = mathbox.three;
 three.camera.position.set(0, 0, 3);
-three.renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
+three.renderer.setClearColor(new THREE.Color(0x000000), 1.0);
 
 function displayTime(t){
     var absT = Math.abs(t);
@@ -85,6 +85,15 @@ function initDiagram() {
         },
         rS: function (t) {
             return blackHole.radius;
+        },
+    });
+
+
+    var gridnoiseShader = mathbox.shader({
+        code: '#grid-noise',
+    }, {
+        t: function () {
+            return timeElapsed;
         },
 
     });
@@ -215,6 +224,10 @@ function initDiagram() {
             pass:'data',
             shader:blackHoleShader
         })
+        .fragment({
+            pass:'eye',
+            shader:gridnoiseShader
+        })
             .ticks({
                 classes: ['foo', 'bar'],
                 width: 2
@@ -234,6 +247,7 @@ function initDiagram() {
                 width: 1,
                 opacity: 0.5,
                 zBias: -5,
+                color:0xFFFFFF
             })
         .end();
     
