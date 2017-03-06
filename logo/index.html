@@ -1,13 +1,32 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Minkowski Diagram</title>
+        <title>Logo</title>
         <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="../bower_components/mathbox/build/mathbox.css" />
         <link rel="stylesheet" href="../bower_components/dat.gui/build/dat.gui.css" />
         <link rel="stylesheet" href="../css/style.css" />
+        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet">
+        <style>
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            canvas {
+                position: absolute;
+            }
+            h1{
+                font-family: Lato;
+                font-size: 72px;
+                font-weight: 100;
+                color:white;
+                z-index:2;
+            }
+        </style>
     </head>
     <body>
+        <h1>UNRELATABLE</h1>
         <script type="x-shader/x-fragment" id="circle-grid">
         uniform float t;
 
@@ -124,11 +143,18 @@
         }
 
         vec4 gridnoise(vec4 rgba, inout vec4 stpq) {
-            vec2 pos = stpq.st*5.0;
+            vec2 pos = stpq.st*5.0 - 2.5;
             vec3 gradient = vec3(0.0);
-            float color = 1.0;
-            color = 0.4*snoise(vec3(pos,t/2.0), gradient) + 0.6;
-            return vec4(color);
+            // vec4 color = vec4(53.0,61.0,151.0,255.0)/255.0;
+            vec4 color = vec4(0.0,0.0,1.0,1.0);
+            float alpha = 0.4*snoise(vec3(pos,t/2.0), gradient) + 0.6;
+
+            pos /= 2.5;
+            float r = sqrt(pos.x*pos.x + pos.y*pos.y);
+            float mask = 1.0 - smoothstep(0.99, 1.0, r);
+            float progress = smoothstep(0.5,3.0, (1.0-r)*t*t);
+            // return vec4(step(1.0, alpha));
+            return progress*alpha*mask*color;
         }
         </script>
         <script src="../bower_components/mathbox/build/mathbox-bundle.js"></script>
