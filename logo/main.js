@@ -38,7 +38,24 @@
 
 // loadingPromise.then(init);
 
+
+var capturer = new CCapture( { 
+    format: 'webm',
+    framerate: 60,
+    verbose:true,
+    autoSaveTime: 10
+} );
+
 init();
+
+// setTimeout(function(){
+// capturer.start();
+// }, 1000);
+
+// setTimeout(function(){
+//     capturer.stop();
+//     capturer.save();
+// }, 60*1000)
 
 function init(){
     mathbox = mathBox({

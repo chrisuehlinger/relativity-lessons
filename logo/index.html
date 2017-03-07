@@ -6,12 +6,13 @@
         <link rel="stylesheet" href="../bower_components/mathbox/build/mathbox.css" />
         <link rel="stylesheet" href="../bower_components/dat.gui/build/dat.gui.css" />
         <link rel="stylesheet" href="../css/style.css" />
-        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Lato:100|Montserrat:100" rel="stylesheet">
         <style>
             body {
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                margin: 0;
             }
             canvas {
                 position: absolute;
@@ -22,6 +23,16 @@
                 font-weight: 100;
                 color:white;
                 z-index:2;
+                animation: fade-in 10s ease-out;
+            }
+
+            @keyframes fade-in {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
             }
         </style>
     </head>
@@ -158,9 +169,10 @@
         }
         </script>
         <script src="../bower_components/mathbox/build/mathbox-bundle.js"></script>
+        <!--<script src="../bower_components/ccapture.js/build/CCapture.all.min.js"></script>-->
         <!--<script src="../bower_components/lodash/lodash.js"></script>-->
-        <script src="../bower_components/jquery/dist/jquery.js"></script>
-        <script src="../bower_components/dat.gui/build/dat.gui.js"></script>
+        <!--<script src="../bower_components/jquery/dist/jquery.js"></script>
+        <script src="../bower_components/dat.gui/build/dat.gui.js"></script>-->
         <script src="main.js"></script>
     </body>
 </html>
